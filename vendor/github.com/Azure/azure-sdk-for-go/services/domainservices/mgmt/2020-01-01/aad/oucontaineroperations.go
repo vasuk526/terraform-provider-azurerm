@@ -25,27 +25,27 @@ import (
 	"net/http"
 )
 
-// DomainServiceOperationsClient is the the AAD Domain Services API.
-type DomainServiceOperationsClient struct {
+// OuContainerOperationsClient is the the AAD Domain Services API.
+type OuContainerOperationsClient struct {
 	BaseClient
 }
 
-// NewDomainServiceOperationsClient creates an instance of the DomainServiceOperationsClient client.
-func NewDomainServiceOperationsClient(subscriptionID string) DomainServiceOperationsClient {
-	return NewDomainServiceOperationsClientWithBaseURI(DefaultBaseURI, subscriptionID)
+// NewOuContainerOperationsClient creates an instance of the OuContainerOperationsClient client.
+func NewOuContainerOperationsClient(subscriptionID string) OuContainerOperationsClient {
+	return NewOuContainerOperationsClientWithBaseURI(DefaultBaseURI, subscriptionID)
 }
 
-// NewDomainServiceOperationsClientWithBaseURI creates an instance of the DomainServiceOperationsClient client using a
+// NewOuContainerOperationsClientWithBaseURI creates an instance of the OuContainerOperationsClient client using a
 // custom endpoint.  Use this when interacting with an Azure cloud that uses a non-standard base URI (sovereign clouds,
 // Azure stack).
-func NewDomainServiceOperationsClientWithBaseURI(baseURI string, subscriptionID string) DomainServiceOperationsClient {
-	return DomainServiceOperationsClient{NewWithBaseURI(baseURI, subscriptionID)}
+func NewOuContainerOperationsClientWithBaseURI(baseURI string, subscriptionID string) OuContainerOperationsClient {
+	return OuContainerOperationsClient{NewWithBaseURI(baseURI, subscriptionID)}
 }
 
-// List lists all the available Domain Services operations.
-func (client DomainServiceOperationsClient) List(ctx context.Context) (result OperationEntityListResultPage, err error) {
+// List lists all the available OuContainer operations.
+func (client OuContainerOperationsClient) List(ctx context.Context) (result OperationEntityListResultPage, err error) {
 	if tracing.IsEnabled() {
-		ctx = tracing.StartSpan(ctx, fqdn+"/DomainServiceOperationsClient.List")
+		ctx = tracing.StartSpan(ctx, fqdn+"/OuContainerOperationsClient.List")
 		defer func() {
 			sc := -1
 			if result.oelr.Response.Response != nil {
@@ -57,20 +57,20 @@ func (client DomainServiceOperationsClient) List(ctx context.Context) (result Op
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "List", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "List", nil, "Failure preparing request")
 		return
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.oelr.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "List", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "List", resp, "Failure sending request")
 		return
 	}
 
 	result.oelr, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "List", resp, "Failure responding to request")
 		return
 	}
 	if result.oelr.hasNextLink() && result.oelr.IsEmpty() {
@@ -82,8 +82,8 @@ func (client DomainServiceOperationsClient) List(ctx context.Context) (result Op
 }
 
 // ListPreparer prepares the List request.
-func (client DomainServiceOperationsClient) ListPreparer(ctx context.Context) (*http.Request, error) {
-	const APIVersion = "2017-06-01"
+func (client OuContainerOperationsClient) ListPreparer(ctx context.Context) (*http.Request, error) {
+	const APIVersion = "2020-01-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
 	}
@@ -91,20 +91,20 @@ func (client DomainServiceOperationsClient) ListPreparer(ctx context.Context) (*
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPath("/providers/Microsoft.AAD/operations"),
+		autorest.WithPath("/providers/Microsoft.Aad/operations"),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
-func (client DomainServiceOperationsClient) ListSender(req *http.Request) (*http.Response, error) {
+func (client OuContainerOperationsClient) ListSender(req *http.Request) (*http.Response, error) {
 	return client.Send(req, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
 // ListResponder handles the response to the List request. The method always
 // closes the http.Response Body.
-func (client DomainServiceOperationsClient) ListResponder(resp *http.Response) (result OperationEntityListResult, err error) {
+func (client OuContainerOperationsClient) ListResponder(resp *http.Response) (result OperationEntityListResult, err error) {
 	err = autorest.Respond(
 		resp,
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
@@ -115,10 +115,10 @@ func (client DomainServiceOperationsClient) ListResponder(resp *http.Response) (
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client DomainServiceOperationsClient) listNextResults(ctx context.Context, lastResults OperationEntityListResult) (result OperationEntityListResult, err error) {
+func (client OuContainerOperationsClient) listNextResults(ctx context.Context, lastResults OperationEntityListResult) (result OperationEntityListResult, err error) {
 	req, err := lastResults.operationEntityListResultPreparer(ctx)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "listNextResults", nil, "Failure preparing next results request")
+		return result, autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
 	if req == nil {
 		return
@@ -126,19 +126,19 @@ func (client DomainServiceOperationsClient) listNextResults(ctx context.Context,
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "listNextResults", resp, "Failure sending next results request")
+		return result, autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "listNextResults", resp, "Failure sending next results request")
 	}
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "aad.DomainServiceOperationsClient", "listNextResults", resp, "Failure responding to next results request")
+		err = autorest.NewErrorWithError(err, "aad.OuContainerOperationsClient", "listNextResults", resp, "Failure responding to next results request")
 	}
 	return
 }
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
-func (client DomainServiceOperationsClient) ListComplete(ctx context.Context) (result OperationEntityListResultIterator, err error) {
+func (client OuContainerOperationsClient) ListComplete(ctx context.Context) (result OperationEntityListResultIterator, err error) {
 	if tracing.IsEnabled() {
-		ctx = tracing.StartSpan(ctx, fqdn+"/DomainServiceOperationsClient.List")
+		ctx = tracing.StartSpan(ctx, fqdn+"/OuContainerOperationsClient.List")
 		defer func() {
 			sc := -1
 			if result.Response().Response.Response != nil {

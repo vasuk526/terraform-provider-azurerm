@@ -1,9 +1,9 @@
-package aadmgmt
+package domainservices
 
 import (
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2017-06-01/aad"
+	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
@@ -27,13 +27,13 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 
 			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
 
-			"domain_controller_ip_addresses": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
+			//"domain_controller_ip_addresses": {
+			//	Type:     schema.TypeList,
+			//	Computed: true,
+			//	Elem: &schema.Schema{
+			//		Type: schema.TypeString,
+			//	},
+			//},
 
 			"security": {
 				Type:     schema.TypeList,
@@ -114,16 +114,16 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			"subnet_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
+			//"subnet_id": {
+			//	Type:     schema.TypeString,
+			//	Computed: true,
+			//},
 		},
 	}
 }
 
 func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*clients.Client).AadMgmt.DomainServicesClient
+	client := meta.(*clients.Client).DomainServices.DomainServicesClient
 	ctx := meta.(*clients.Client).StopContext
 
 	name := d.Get("name").(string)
@@ -145,23 +145,23 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 		d.Set("location", azure.NormalizeLocation(*location))
 	}
 	if domainServiceProperties := resp.DomainServiceProperties; domainServiceProperties != nil {
-		if err := d.Set("domain_controller_ip_addresses", domainServiceProperties.DomainControllerIPAddress); err != nil {
-			return fmt.Errorf("Error setting `domain_controller_ip_addresses`: %+v", err)
-		}
+		//if err := d.Set("domain_controller_ip_addresses", domainServiceProperties.DomainControllerIPAddress); err != nil {
+		//	return fmt.Errorf("Error setting `domain_controller_ip_addresses`: %+v", err)
+		//}
 		if err := d.Set("security", flattenDomainServiceSecurity(domainServiceProperties.DomainSecuritySettings)); err != nil {
 			return fmt.Errorf("Error setting `security`: %+v", err)
 		}
-		if err := d.Set("ldaps", flattenDomainServiceLdapsSettings(domainServiceProperties.LdapsSettings)); err != nil {
+		if err := d.Set("ldaps", flattenDomainServiceLdaps(domainServiceProperties.LdapsSettings)); err != nil {
 			return fmt.Errorf("Error setting `ldaps_settings`: %+v", err)
 		}
-		if err := d.Set("notifications", flattenDomainServiceNotification(domainServiceProperties.NotificationSettings)); err != nil {
+		if err := d.Set("notifications", flattenDomainServiceNotifications(domainServiceProperties.NotificationSettings)); err != nil {
 			return fmt.Errorf("Error setting `notification_settings`: %+v", err)
 		}
 		d.Set("filtered_sync", false)
 		if domainServiceProperties.FilteredSync == aad.FilteredSyncEnabled {
 			d.Set("filtered_sync", true)
 		}
-		d.Set("subnet_id", domainServiceProperties.SubnetID)
+		//d.Set("subnet_id", domainServiceProperties.SubnetID)
 	}
 
 	return nil

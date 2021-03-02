@@ -29,7 +29,7 @@ import (
 )
 
 // The package's fully qualified name.
-const fqdn = "github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2017-06-01/aad"
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 
 // CloudError an error response from the Domain Services.
 type CloudError struct {
@@ -57,45 +57,6 @@ type ContainerAccount struct {
 	Spn *string `json:"spn,omitempty"`
 	// Password - The account password
 	Password *string `json:"password,omitempty"`
-}
-
-// DefaultErrorResponse domain Service error response.
-type DefaultErrorResponse struct {
-	// Error - READ-ONLY; Error model.
-	Error *DefaultErrorResponseError `json:"error,omitempty"`
-}
-
-// DefaultErrorResponseError error model.
-type DefaultErrorResponseError struct {
-	// Code - READ-ONLY; Standardized string to programmatically identify the error.
-	Code *string `json:"code,omitempty"`
-	// Message - READ-ONLY; Detailed error description and debugging information.
-	Message *string `json:"message,omitempty"`
-	// Target - READ-ONLY; Detailed error description and debugging information.
-	Target *string `json:"target,omitempty"`
-	// Details - Error details.
-	Details *[]DefaultErrorResponseErrorDetailsItem `json:"details,omitempty"`
-	// Innererror - READ-ONLY; More information to debug error.
-	Innererror *string `json:"innererror,omitempty"`
-}
-
-// MarshalJSON is the custom marshaler for DefaultErrorResponseError.
-func (der DefaultErrorResponseError) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	if der.Details != nil {
-		objectMap["details"] = der.Details
-	}
-	return json.Marshal(objectMap)
-}
-
-// DefaultErrorResponseErrorDetailsItem detailed errors.
-type DefaultErrorResponseErrorDetailsItem struct {
-	// Code - READ-ONLY; Standardized string to programmatically identify the error.
-	Code *string `json:"code,omitempty"`
-	// Message - READ-ONLY; Detailed error description and debugging information.
-	Message *string `json:"message,omitempty"`
-	// Target - READ-ONLY; Detailed error description and debugging information.
-	Target *string `json:"target,omitempty"`
 }
 
 // DomainSecuritySettings domain Security Settings
@@ -405,34 +366,24 @@ type DomainServiceProperties struct {
 	DomainName *string `json:"domainName,omitempty"`
 	// DeploymentID - READ-ONLY; Deployment Id
 	DeploymentID *string `json:"deploymentId,omitempty"`
-	// VnetSiteID - READ-ONLY; Virtual network site id
-	VnetSiteID *string `json:"vnetSiteId,omitempty"`
-	// SubnetID - The name of the virtual network that Domain Services will be deployed on. The id of the subnet that Domain Services will be deployed on. /virtualNetwork/vnetName/subnets/subnetName.
-	SubnetID *string `json:"subnetId,omitempty"`
+	// SyncOwner - READ-ONLY; SyncOwner ReplicaSet Id
+	SyncOwner *string `json:"syncOwner,omitempty"`
+	// ReplicaSets - List of ReplicaSets
+	ReplicaSets *[]ReplicaSet `json:"replicaSets,omitempty"`
 	// LdapsSettings - Secure LDAP Settings
 	LdapsSettings *LdapsSettings `json:"ldapsSettings,omitempty"`
-	// DomainSecuritySettings - DomainSecurity Settings
-	DomainSecuritySettings *DomainSecuritySettings `json:"domainSecuritySettings,omitempty"`
 	// ResourceForestSettings - Resource Forest Settings
 	ResourceForestSettings *ResourceForestSettings `json:"resourceForestSettings,omitempty"`
+	// DomainSecuritySettings - DomainSecurity Settings
+	DomainSecuritySettings *DomainSecuritySettings `json:"domainSecuritySettings,omitempty"`
 	// DomainConfigurationType - Domain Configuration Type
 	DomainConfigurationType *string `json:"domainConfigurationType,omitempty"`
 	// Sku - Sku Type
 	Sku *string `json:"sku,omitempty"`
-	// HealthLastEvaluated - READ-ONLY; Last domain evaluation run DateTime
-	HealthLastEvaluated *date.TimeRFC1123 `json:"healthLastEvaluated,omitempty"`
-	// HealthMonitors - READ-ONLY; List of Domain Health Monitors
-	HealthMonitors *[]HealthMonitor `json:"healthMonitors,omitempty"`
-	// HealthAlerts - READ-ONLY; List of Domain Health Alerts
-	HealthAlerts *[]HealthAlert `json:"healthAlerts,omitempty"`
-	// NotificationSettings - Notification Settings
-	NotificationSettings *NotificationSettings `json:"notificationSettings,omitempty"`
 	// FilteredSync - Enabled or Disabled flag to turn on Group-based filtered sync. Possible values include: 'FilteredSyncEnabled', 'FilteredSyncDisabled'
 	FilteredSync FilteredSync `json:"filteredSync,omitempty"`
-	// DomainControllerIPAddress - READ-ONLY; List of Domain Controller IP Address
-	DomainControllerIPAddress *[]string `json:"domainControllerIpAddress,omitempty"`
-	// ServiceStatus - READ-ONLY; Status of Domain Service instance
-	ServiceStatus *string `json:"serviceStatus,omitempty"`
+	// NotificationSettings - Notification Settings
+	NotificationSettings *NotificationSettings `json:"notificationSettings,omitempty"`
 	// ProvisioningState - READ-ONLY; the current deployment or provisioning state, which only appears in the response.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
@@ -443,17 +394,17 @@ func (dsp DomainServiceProperties) MarshalJSON() ([]byte, error) {
 	if dsp.DomainName != nil {
 		objectMap["domainName"] = dsp.DomainName
 	}
-	if dsp.SubnetID != nil {
-		objectMap["subnetId"] = dsp.SubnetID
+	if dsp.ReplicaSets != nil {
+		objectMap["replicaSets"] = dsp.ReplicaSets
 	}
 	if dsp.LdapsSettings != nil {
 		objectMap["ldapsSettings"] = dsp.LdapsSettings
 	}
-	if dsp.DomainSecuritySettings != nil {
-		objectMap["domainSecuritySettings"] = dsp.DomainSecuritySettings
-	}
 	if dsp.ResourceForestSettings != nil {
 		objectMap["resourceForestSettings"] = dsp.ResourceForestSettings
+	}
+	if dsp.DomainSecuritySettings != nil {
+		objectMap["domainSecuritySettings"] = dsp.DomainSecuritySettings
 	}
 	if dsp.DomainConfigurationType != nil {
 		objectMap["domainConfigurationType"] = dsp.DomainConfigurationType
@@ -461,11 +412,11 @@ func (dsp DomainServiceProperties) MarshalJSON() ([]byte, error) {
 	if dsp.Sku != nil {
 		objectMap["sku"] = dsp.Sku
 	}
-	if dsp.NotificationSettings != nil {
-		objectMap["notificationSettings"] = dsp.NotificationSettings
-	}
 	if dsp.FilteredSync != "" {
 		objectMap["filteredSync"] = dsp.FilteredSync
+	}
+	if dsp.NotificationSettings != nil {
+		objectMap["notificationSettings"] = dsp.NotificationSettings
 	}
 	return json.Marshal(objectMap)
 }
@@ -555,8 +506,6 @@ type LdapsSettings struct {
 	CertificateNotAfter *date.Time `json:"certificateNotAfter,omitempty"`
 	// ExternalAccess - A flag to determine whether or not Secure LDAP access over the internet is enabled or disabled. Possible values include: 'Enabled', 'Disabled'
 	ExternalAccess ExternalAccess `json:"externalAccess,omitempty"`
-	// ExternalAccessIPAddress - READ-ONLY; External access ip address.
-	ExternalAccessIPAddress *string `json:"externalAccessIpAddress,omitempty"`
 }
 
 // MarshalJSON is the custom marshaler for LdapsSettings.
@@ -1114,6 +1063,42 @@ type OuContainerUpdateFuture struct {
 	// Result returns the result of the asynchronous operation.
 	// If the operation has not completed it will return an error.
 	Result func(OuContainerClient) (OuContainer, error)
+}
+
+// ReplicaSet replica Set Definition
+type ReplicaSet struct {
+	// ReplicaSetID - READ-ONLY; ReplicaSet Id
+	ReplicaSetID *string `json:"replicaSetId,omitempty"`
+	// Location - Virtual network location
+	Location *string `json:"location,omitempty"`
+	// VnetSiteID - READ-ONLY; Virtual network site id
+	VnetSiteID *string `json:"vnetSiteId,omitempty"`
+	// SubnetID - The name of the virtual network that Domain Services will be deployed on. The id of the subnet that Domain Services will be deployed on. /virtualNetwork/vnetName/subnets/subnetName.
+	SubnetID *string `json:"subnetId,omitempty"`
+	// DomainControllerIPAddress - READ-ONLY; List of Domain Controller IP Address
+	DomainControllerIPAddress *[]string `json:"domainControllerIpAddress,omitempty"`
+	// ExternalAccessIPAddress - READ-ONLY; External access ip address.
+	ExternalAccessIPAddress *string `json:"externalAccessIpAddress,omitempty"`
+	// ServiceStatus - READ-ONLY; Status of Domain Service instance
+	ServiceStatus *string `json:"serviceStatus,omitempty"`
+	// HealthLastEvaluated - READ-ONLY; Last domain evaluation run DateTime
+	HealthLastEvaluated *date.TimeRFC1123 `json:"healthLastEvaluated,omitempty"`
+	// HealthMonitors - READ-ONLY; List of Domain Health Monitors
+	HealthMonitors *[]HealthMonitor `json:"healthMonitors,omitempty"`
+	// HealthAlerts - READ-ONLY; List of Domain Health Alerts
+	HealthAlerts *[]HealthAlert `json:"healthAlerts,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ReplicaSet.
+func (rs ReplicaSet) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rs.Location != nil {
+		objectMap["location"] = rs.Location
+	}
+	if rs.SubnetID != nil {
+		objectMap["subnetId"] = rs.SubnetID
+	}
+	return json.Marshal(objectMap)
 }
 
 // Resource the Resource model definition.

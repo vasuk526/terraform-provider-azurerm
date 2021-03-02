@@ -7,7 +7,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/common"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/features"
-	aadmgmt "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/aadmgmt/client"
 	advisor "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/advisor/client"
 	analysisServices "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/analysisservices/client"
 	apiManagement "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/apimanagement/client"
@@ -38,6 +37,7 @@ import (
 	devtestlabs "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/devtestlabs/client"
 	digitaltwins "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/digitaltwins/client"
 	dns "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/dns/client"
+	domainservices "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/domainservices/client"
 	eventgrid "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventgrid/client"
 	eventhub "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/client"
 	firewall "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/firewall/client"
@@ -105,7 +105,6 @@ type Client struct {
 	Account  *ResourceManagerAccount
 	Features features.UserFeatures
 
-	AadMgmt               *aadmgmt.Client
 	Advisor               *advisor.Client
 	AnalysisServices      *analysisServices.Client
 	ApiManagement         *apiManagement.Client
@@ -137,6 +136,7 @@ type Client struct {
 	DevTestLabs           *devtestlabs.Client
 	DigitalTwins          *digitaltwins.Client
 	Dns                   *dns.Client
+	DomainServices        *domainservices.Client
 	EventGrid             *eventgrid.Client
 	Eventhub              *eventhub.Client
 	Firewall              *firewall.Client
@@ -206,7 +206,6 @@ func (client *Client) Build(ctx context.Context, o *common.ClientOptions) error 
 	client.Features = o.Features
 	client.StopContext = ctx
 
-	client.AadMgmt = aadmgmt.NewClient(o)
 	client.Advisor = advisor.NewClient(o)
 	client.AnalysisServices = analysisServices.NewClient(o)
 	client.ApiManagement = apiManagement.NewClient(o)
@@ -238,6 +237,7 @@ func (client *Client) Build(ctx context.Context, o *common.ClientOptions) error 
 	client.DevTestLabs = devtestlabs.NewClient(o)
 	client.DigitalTwins = digitaltwins.NewClient(o)
 	client.Dns = dns.NewClient(o)
+	client.DomainServices = domainservices.NewClient(o)
 	client.EventGrid = eventgrid.NewClient(o)
 	client.Eventhub = eventhub.NewClient(o)
 	client.Firewall = firewall.NewClient(o)
