@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
@@ -23,40 +24,11 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				ValidateFunc: validation.StringIsNotWhiteSpace,
 			},
 
-			"location": azure.SchemaLocationForDataSource(),
-
 			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
 
-			//"domain_controller_ip_addresses": {
-			//	Type:     schema.TypeList,
-			//	Computed: true,
-			//	Elem: &schema.Schema{
-			//		Type: schema.TypeString,
-			//	},
-			//},
+			"location": azure.SchemaLocationForDataSource(),
 
-			"security": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"ntlm_v1": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"sync_ntlm_passwords": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"tls_v1": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
-				},
-			},
-
-			"filtered_sync": {
+			"filtered_sync_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -66,23 +38,27 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"external_access": {
+						"enabled": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"ldaps": {
+
+						"external_access_enabled": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
 						"pfx_certificate": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
 						"pfx_certificate_password": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"external_access_ip_address": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -114,10 +90,140 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			//"subnet_id": {
-			//	Type:     schema.TypeString,
-			//	Computed: true,
-			//},
+			"resource_forest": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"resource_forest": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"forest_trust": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+
+									"remote_dns_ips": {
+										Type:     schema.TypeList,
+										Computed: true,
+										Elem: &schema.Schema{
+											Type: schema.TypeString,
+										},
+									},
+
+									"trust_direction": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+
+									"trust_password": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+
+									"trusted_domain_fqdn": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+
+			"replica_sets": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// TODO: add health-related attributes
+
+						"domain_controller_ip_addresses": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"location": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"replica_set_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"service_status": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"subnet_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"vnet_site_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"security": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ntlm_v1_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"sync_kerberos_passwords": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"sync_ntlm_passwords": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"sync_on_prem_passwords": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"tls_v1_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"sku": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -141,27 +247,46 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 
 	d.Set("name", name)
 	d.Set("resource_group_name", resourceGroup)
+
 	if location := resp.Location; location != nil {
 		d.Set("location", azure.NormalizeLocation(*location))
 	}
-	if domainServiceProperties := resp.DomainServiceProperties; domainServiceProperties != nil {
-		//if err := d.Set("domain_controller_ip_addresses", domainServiceProperties.DomainControllerIPAddress); err != nil {
-		//	return fmt.Errorf("Error setting `domain_controller_ip_addresses`: %+v", err)
-		//}
-		if err := d.Set("security", flattenDomainServiceSecurity(domainServiceProperties.DomainSecuritySettings)); err != nil {
+
+	if props := resp.DomainServiceProperties; props != nil {
+		domainConfigType := ""
+		if v := props.DomainConfigurationType; v != nil {
+			domainConfigType = *v
+		}
+		d.Set("domain_configuration_type", domainConfigType)
+
+		d.Set("domain_name", props.DomainName)
+
+		d.Set("filtered_sync_enabled", false)
+		if props.FilteredSync == aad.FilteredSyncEnabled {
+			d.Set("filtered_sync_enabled", true)
+		}
+
+		d.Set("sku", props.Sku)
+
+		if err := d.Set("ldaps", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
+			return fmt.Errorf("Error setting `ldaps`: %+v", err)
+		}
+
+		if err := d.Set("notifications", flattenDomainServiceNotifications(props.NotificationSettings)); err != nil {
+			return fmt.Errorf("Error setting `notifications`: %+v", err)
+		}
+
+		if err := d.Set("replica_sets", flattenDomainServiceReplicaSets(props.ReplicaSets)); err != nil {
+			return fmt.Errorf("Error setting `replica_sets`: %+v", err)
+		}
+
+		if err := d.Set("resource_forest", flattenDomainServiceResourceForest(props.ResourceForestSettings)); err != nil {
+			return fmt.Errorf("setting `resource_forest`: %+v", err)
+		}
+
+		if err := d.Set("security", flattenDomainServiceSecurity(props.DomainSecuritySettings)); err != nil {
 			return fmt.Errorf("Error setting `security`: %+v", err)
 		}
-		if err := d.Set("ldaps", flattenDomainServiceLdaps(domainServiceProperties.LdapsSettings)); err != nil {
-			return fmt.Errorf("Error setting `ldaps_settings`: %+v", err)
-		}
-		if err := d.Set("notifications", flattenDomainServiceNotifications(domainServiceProperties.NotificationSettings)); err != nil {
-			return fmt.Errorf("Error setting `notification_settings`: %+v", err)
-		}
-		d.Set("filtered_sync", false)
-		if domainServiceProperties.FilteredSync == aad.FilteredSyncEnabled {
-			d.Set("filtered_sync", true)
-		}
-		//d.Set("subnet_id", domainServiceProperties.SubnetID)
 	}
 
 	return nil

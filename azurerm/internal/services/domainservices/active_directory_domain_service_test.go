@@ -22,6 +22,7 @@ type ActiveDirectoryDomainServiceResource struct {
 
 func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_active_directory_domain_service", "test")
+	dataSourceName := "data.azurerm_active_directory_domain_service"
 	r := ActiveDirectoryDomainServiceResource{
 		adminPassword: fmt.Sprintf("%s%s", "p@$$Wd", acctest.RandString(6)),
 	}
@@ -34,10 +35,17 @@ func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 				resource.TestCheckResourceAttr(data.ResourceName, "replica_set.0.domain_controller_ip_addresses.#", "2"),
 			),
 		},
+		{
+			Config: r.dataSource(data),
+			Check: resource.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+				resource.TestCheckResourceAttr(dataSourceName, "replica_set.0.domain_controller_ip_addresses.#", "2"),
+			),
+		},
 		data.ImportStep("ldaps.0.pfx_certificate", "ldaps.0.pfx_certificate_password"),
 		{
 			Config:      r.requiresImport(data),
-			ExpectError: acceptance.RequiresImportError("azurerm_active_directory_domain_service"),
+			ExpectError: acceptance.RequiresImportError(data.ResourceType),
 		},
 	})
 }
@@ -207,13 +215,22 @@ resource "azurerm_active_directory_domain_service" "test" {
   name                = "acctest-%[5]s.net"
   location            = azurerm_resource_group.aadds.location
   resource_group_name = azurerm_resource_group.aadds.name
-  filtered_sync       = false
+
+  domain_name           = "annie.are.you.ok"
+  sku                   = "Enterprise"
+  filtered_sync_enabled = false
 
   //ldaps {
   //  external_access          = true
   //  pfx_certificate          = "TODO Generate a dummy pfx key+cert (https://docs.microsoft.com/en-us/azure/active-directory-domain-services/tutorial-configure-ldaps)"
   //  pfx_certificate_password = "test"
   //}
+
+  notifications {
+    additional_recipients = ["notifyA@example.net", "notifyB@example.org"]
+    notify_dc_admins      = true
+    notify_global_admins  = true
+  }
 
   replica_set {
     location  = azurerm_virtual_network.test_one.location
@@ -226,19 +243,32 @@ resource "azurerm_active_directory_domain_service" "test" {
   }
 
   security {
-    ntlm_v1             = true
-    tls_v1              = true
-    sync_ntlm_passwords = true
+    ntlm_v1_enabled         = true
+    sync_kerberos_passwords = true
+    sync_ntlm_passwords     = true
+    sync_on_prem_passwords  = true
+    tls_v1_enabled          = true
   }
 
   depends_on = [
-    //azuread_service_principal.test,
+    azuread_service_principal.test,
     azurerm_subnet_network_security_group_association.test_one,
     azurerm_subnet_network_security_group_association.test_two,
     azurerm_virtual_network_peering.test,
   ]
 }
 `, template1, template2, data.Locations.Primary, data.RandomInteger, data.RandomString, r.adminPassword)
+}
+
+func (r ActiveDirectoryDomainServiceResource) dataSource(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%[1]s
+
+data "azurerm_active_directory_domain_service" "test" {
+  name                = azurerm_active_directory_domain_service.test.name
+  resource_group_name = azurerm_active_directory_domain_service.test.resource_group_name
+}
+`, r.complete(data))
 }
 
 func (r ActiveDirectoryDomainServiceResource) requiresImport(data acceptance.TestData) string {

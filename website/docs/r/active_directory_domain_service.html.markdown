@@ -146,31 +146,53 @@ resource "azurerm_active_directory_domain_service" "example" {
 
 The following arguments are supported:
 
-* `name` - (Required) The domain name for your managed Active Directory domain.
+* `domain_configuration_type` - (Optional) The forest type to use when creating the managed domain. Set to `ResourceTrusting` to create a _Resource Forest_, omit this property to create a _User Forest_. Changing this forces a new resource to be created.
+  
+* `domain_name` - (Required) The Active Directory domain to use. See [official documentation](https://docs.microsoft.com/en-us/azure/active-directory-domain-services/tutorial-create-instance#create-a-managed-domain) for constraints and recommendations.
+
+* `filtered_sync_enabled` - (Optional) Whether to enable filtered sync for users and groups in Azure Active Directory. Defaults to `false`.
+
+* `ldaps` - (Optional) An `ldaps` block as defined below.
 
 * `location` - (Required) The Azure location where the Domain Service exists. Changing this forces a new resource to be created.
 
-* `resource_group_name` - (Required) The name of the Resource Group in which the Domain Service should exist. Changing this forces a new resource to be created.
-
-* `filtered_sync` - (Optional) BLAH BLAH. Defaults to `false`.
-
----
-
-* `ldaps` - (Optional) An `ldaps` block as defined below.
+* `name` - (Required) The name for your managed Active Directory Domain Service resource.
 
 * `notifications` - (Optional) A `notifications` block as defined below.
 
 * `replica_set` - (Required) One or more `replica_set` blocks as defined below.
 
+* `resource_group_name` - (Required) The name of the Resource Group in which the Domain Service should exist. Changing this forces a new resource to be created.
+
 * `security` - (Optional) A `security` block as defined below.
 
+* `sku` - (Required) The SKU to use when provisioning the Domain Service resource. One of `Standard`, `Enterprise` or `Premium`.
+
 * `tags` - (Optional) A mapping of tags assigned to the resource.
+
+---
+
+ldaps block
+
+---
+
+notifications block
+
+---
+
+replica_set blocks
+
+---
+
+security block
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the Domain Service.
+
+TODO all computed attribs including in blocks
 
 ## Timeouts
 

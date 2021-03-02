@@ -4,12 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
-
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
-
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 	"github.com/hashicorp/go-azure-helpers/response"
@@ -18,9 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	azValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/domainservices/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -42,19 +42,30 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
-		Schema: map[string]*schema.Schema{ // TODO: add computed attributes: deployment_id, sync_owner,
-			"name": { // TODO: set domain_name separately
+		Schema: map[string]*schema.Schema{ // TODO: add computed attributes: deployment_id, sync_owner
+			"deployment_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"domain_configuration_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+				ValidateFunc: validation.StringInSlice([]string{
+					"",
+					"ResourceTrusting",
+				}, false),
+			},
+
+			"domain_name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation
+				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation, first prefix must be 15 chars or less
 			},
 
-			"location": azure.SchemaLocation(),
-
-			"resource_group_name": azure.SchemaResourceGroupNameDiffSuppress(),
-
-			"filtered_sync": {
+			"filtered_sync_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
@@ -66,10 +77,20 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"external_access": {
+						"enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"external_access_enabled": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
+						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
 						},
 
 						"pfx_certificate": {
@@ -86,6 +107,15 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 						},
 					},
 				},
+			},
+
+			"location": azure.SchemaLocation(),
+
+			"name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation
 			},
 
 			"notifications": {
@@ -107,13 +137,13 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 						"notify_dc_admins": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  true,
+							Default:  false,
 						},
 
 						"notify_global_admins": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  true,
+							Default:  false,
 						},
 					},
 				},
@@ -121,11 +151,11 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 
 			"replica_set": {
 				Type:     schema.TypeList,
-				Optional: true, // TODO: make required
+				Required: true, // TODO: make required
 				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						// TODO: add health-related attributes and other computed attributes (replicaSetId, vnetId etc)
+						// TODO: add health-related attributes
 
 						"domain_controller_ip_addresses": {
 							Type:     schema.TypeList,
@@ -149,6 +179,11 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 							DiffSuppressFunc: location.DiffSuppressFunc,
 						},
 
+						"replica_set_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
 						"service_status": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -160,9 +195,74 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 							ForceNew:     true, // TODO: figure out if this is needed
 							ValidateFunc: azure.ValidateResourceID,
 						},
+
+						"vnet_site_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
+
+			"resource_forest": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"resource_forest": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
+
+						"forest_trust": {
+							Type:     schema.TypeList,
+							Optional: true,
+							MinItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name": {
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.StringIsNotEmpty,
+									},
+
+									"remote_dns_ips": {
+										Type:     schema.TypeList,
+										Required: true,
+										MinItems: 1,
+										Elem: &schema.Schema{
+											Type:         schema.TypeString,
+											ValidateFunc: validation.StringIsNotEmpty,
+										},
+									},
+
+									"trust_direction": {
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.StringIsNotEmpty,
+									},
+
+									"trust_password": {
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.StringIsNotEmpty,
+									},
+
+									"trusted_domain_fqdn": {
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.StringIsNotEmpty,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+
+			"resource_group_name": azure.SchemaResourceGroupNameDiffSuppress(),
 
 			"security": {
 				Type:     schema.TypeList,
@@ -170,28 +270,52 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{ // TODO: add sync_kerberos and sync_on_prem properties
-						"ntlm_v1": {
+					Schema: map[string]*schema.Schema{
+						"ntlm_v1_enabled": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  true,
+							Default:  false,
+						},
+
+						"sync_kerberos_passwords": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 
 						"sync_ntlm_passwords": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  true,
+							Default:  false,
 						},
 
-						"tls_v1": {
+						"sync_on_prem_passwords": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  true,
+							Default:  false,
+						},
+
+						"tls_v1_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 					},
 				},
 			},
-		}, // TODO: add forest settings, SKU
+
+			"sku": {
+				Type:     schema.TypeString,
+				Required: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Standard",
+					"Enterprise",
+					"Premium",
+				}, false),
+			},
+
+			"tags": tags.Schema(),
+		},
 	}
 }
 
@@ -219,12 +343,11 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 
 	location := azure.NormalizeLocation(d.Get("location").(string))
 	filteredSync := aad.FilteredSyncDisabled
-	if d.Get("filtered_sync").(bool) {
+	if d.Get("filtered_sync_enabled").(bool) {
 		filteredSync = aad.FilteredSyncDisabled
 	}
 
-	domainService := aad.DomainService{ // TODO: add tags
-		Location: &location,
+	domainService := aad.DomainService{
 		DomainServiceProperties: &aad.DomainServiceProperties{
 			DomainName:             utils.String(d.Get("domain_name").(string)),
 			DomainSecuritySettings: expandDomainServiceSecurity(d.Get("security").([]interface{})),
@@ -232,7 +355,15 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 			LdapsSettings:          expandDomainServiceLdaps(d.Get("ldaps").([]interface{})),
 			NotificationSettings:   expandDomainServiceNotifications(d.Get("notifications").([]interface{})),
 			ReplicaSets:            expandDomainServiceReplicaSets(d.Get("replica_set").([]interface{})),
-		}, // TODO: look into DomainConfigurationType
+			ResourceForestSettings: expandDomainServiceResourceForest(d.Get("resource_forest").([]interface{})),
+			Sku:                    utils.String(d.Get("sku").(string)),
+		},
+		Location: &location,
+		Tags:     tags.Expand(d.Get("tags").(map[string]interface{})),
+	}
+
+	if v, ok := d.GetOk("domain_configuration_type"); ok && v != "" {
+		domainService.DomainServiceProperties.DomainConfigurationType = utils.String(d.Get("domain_configuration_type").(string))
 	}
 
 	future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
@@ -288,27 +419,44 @@ func resourceActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta inter
 		d.Set("location", azure.NormalizeLocation(*location))
 	}
 
-	if domainServiceProperties := resp.DomainServiceProperties; domainServiceProperties != nil {
-		if err := d.Set("ldaps", flattenDomainServiceLdaps(domainServiceProperties.LdapsSettings)); err != nil {
-			return fmt.Errorf("setting `ldaps`: %+v", err)
+	if props := resp.DomainServiceProperties; props != nil {
+		domainConfigType := ""
+		if v := props.DomainConfigurationType; v != nil {
+			domainConfigType = *v
 		}
-		if err := d.Set("notifications", flattenDomainServiceNotifications(domainServiceProperties.NotificationSettings)); err != nil {
-			return fmt.Errorf("setting `notifications`: %+v", err)
-		}
-		if err := d.Set("replica_set", flattenDomainServiceReplicaSets(domainServiceProperties.ReplicaSets)); err != nil {
-			return fmt.Errorf("setting `replica_set`: %+v", err)
-		}
-		if err := d.Set("security", flattenDomainServiceSecurity(domainServiceProperties.DomainSecuritySettings)); err != nil {
-			return fmt.Errorf("setting `security`: %+v", err)
+		d.Set("domain_configuration_type", domainConfigType)
+
+		d.Set("domain_name", props.DomainName)
+
+		d.Set("filtered_sync_enabled", false)
+		if props.FilteredSync == aad.FilteredSyncEnabled {
+			d.Set("filtered_sync_enabled", true)
 		}
 
-		d.Set("filtered_sync", false)
-		if domainServiceProperties.FilteredSync == aad.FilteredSyncEnabled {
-			d.Set("filtered_sync", true)
+		d.Set("sku", props.Sku)
+
+		if err := d.Set("ldaps", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
+			return fmt.Errorf("setting `ldaps`: %+v", err)
+		}
+
+		if err := d.Set("notifications", flattenDomainServiceNotifications(props.NotificationSettings)); err != nil {
+			return fmt.Errorf("setting `notifications`: %+v", err)
+		}
+
+		if err := d.Set("replica_set", flattenDomainServiceReplicaSets(props.ReplicaSets)); err != nil {
+			return fmt.Errorf("setting `replica_set`: %+v", err)
+		}
+
+		if err := d.Set("resource_forest", flattenDomainServiceResourceForest(props.ResourceForestSettings)); err != nil {
+			return fmt.Errorf("setting `resource_forest`: %+v", err)
+		}
+
+		if err := d.Set("security", flattenDomainServiceSecurity(props.DomainSecuritySettings)); err != nil {
+			return fmt.Errorf("setting `security`: %+v", err)
 		}
 	}
 
-	return nil
+	return tags.FlattenAndSet(d, resp.Tags)
 }
 
 func resourceActiveDirectoryDomainServiceDelete(d *schema.ResourceData, meta interface{}) error {
@@ -369,7 +517,7 @@ func expandDomainServiceLdaps(input []interface{}) (ldaps *aad.LdapsSettings) {
 	v := input[0].(map[string]interface{})
 	ldaps.PfxCertificate = utils.String(v["pfx_certificate"].(string))
 	ldaps.PfxCertificatePassword = utils.String(v["pfx_certificate_password"].(string))
-	if v["external_access"].(bool) {
+	if v["external_access_enabled"].(bool) {
 		ldaps.ExternalAccess = aad.Enabled
 	} else {
 		ldaps.ExternalAccess = aad.Disabled
@@ -432,6 +580,32 @@ func expandDomainServiceReplicaSets(input []interface{}) *[]aad.ReplicaSet {
 	return &ret
 }
 
+func expandDomainServiceResourceForest(input []interface{}) *aad.ResourceForestSettings {
+	if len(input) == 0 {
+		return nil
+	}
+
+	in := input[0].(map[string]interface{})
+
+	forestTrusts := make([]aad.ForestTrust, 0)
+
+	for _, inTrust := range in["forest_trust"].([]map[string]interface{}) {
+		remoteDnsIps := strings.Join(inTrust["remote_dns_ips"].([]string), ",")
+		forestTrusts = append(forestTrusts, aad.ForestTrust{
+			TrustedDomainFqdn: utils.String(inTrust["trusted_domain_fqdn"].(string)),
+			TrustDirection:    utils.String(inTrust["trust_direction"].(string)),
+			FriendlyName:      utils.String(inTrust["name"].(string)),
+			RemoteDNSIps:      utils.String(remoteDnsIps),
+			TrustPassword:     utils.String(inTrust["trust_password"].(string)),
+		})
+	}
+
+	return &aad.ResourceForestSettings{
+		ResourceForest: utils.String(in["resource_forest"].(string)),
+		Settings:       &forestTrusts,
+	}
+}
+
 func expandDomainServiceSecurity(input []interface{}) *aad.DomainSecuritySettings {
 	if len(input) == 0 {
 		return nil
@@ -439,23 +613,33 @@ func expandDomainServiceSecurity(input []interface{}) *aad.DomainSecuritySetting
 	v := input[0].(map[string]interface{})
 
 	ntlmV1 := aad.NtlmV1Disabled
+	syncKerberosPasswords := aad.SyncKerberosPasswordsDisabled
 	syncNtlmPasswords := aad.SyncNtlmPasswordsDisabled
+	syncOnPremPasswords := aad.SyncOnPremPasswordsDisabled
 	tlsV1 := aad.TLSV1Disabled
 
-	if v["ntlm_v1"].(bool) {
+	if v["ntlm_v1_enabled"].(bool) {
 		ntlmV1 = aad.NtlmV1Enabled
+	}
+	if v["sync_kerberos_passwords"].(bool) {
+		syncKerberosPasswords = aad.SyncKerberosPasswordsEnabled
 	}
 	if v["sync_ntlm_passwords"].(bool) {
 		syncNtlmPasswords = aad.SyncNtlmPasswordsEnabled
 	}
-	if v["tls_v1"].(bool) {
+	if v["sync_on_prem_passwords"].(bool) {
+		syncOnPremPasswords = aad.SyncOnPremPasswordsEnabled
+	}
+	if v["tls_v1_enabled"].(bool) {
 		tlsV1 = aad.TLSV1Enabled
 	}
 
 	return &aad.DomainSecuritySettings{
-		NtlmV1:            ntlmV1,
-		SyncNtlmPasswords: syncNtlmPasswords,
-		TLSV1:             tlsV1,
+		NtlmV1:                ntlmV1,
+		SyncKerberosPasswords: syncKerberosPasswords,
+		SyncNtlmPasswords:     syncNtlmPasswords,
+		SyncOnPremPasswords:   syncOnPremPasswords,
+		TLSV1:                 tlsV1,
 	}
 }
 
@@ -465,15 +649,15 @@ func flattenDomainServiceLdaps(input *aad.LdapsSettings) []interface{} {
 	}
 
 	result := map[string]interface{}{
-		"external_access": false,
-		"ldaps":           false,
+		"enabled":                 false,
+		"external_access_enabled": false,
 	}
 
 	if input.ExternalAccess == aad.Enabled {
-		result["external_access"] = true
+		result["external_access_enabled"] = true
 	}
 	if input.Ldaps == aad.LdapsEnabled {
-		result["ldaps"] = true
+		result["enabled"] = true
 	}
 	if pfxCertificate := input.PfxCertificate; pfxCertificate != nil {
 		result["pfx_certificate"] = *pfxCertificate
@@ -508,8 +692,98 @@ func flattenDomainServiceNotifications(input *aad.NotificationSettings) []interf
 	return []interface{}{result}
 }
 
-func flattenDomainServiceReplicaSets(input *[]aad.ReplicaSet) []interface{} {
-	return nil
+func flattenDomainServiceReplicaSets(input *[]aad.ReplicaSet) (ret []interface{}) {
+	if input == nil {
+		return
+	}
+
+	for _, in := range *input {
+		repl := map[string]interface{}{
+			"domain_controller_ip_addresses": "",
+			"external_access_ip_address":     "",
+			"location":                       "",
+			"replica_set_id":                 "",
+			"service_status":                 "",
+			"subnet_id":                      "",
+			"vnet_site_id":                   "",
+		}
+		if in.DomainControllerIPAddress != nil {
+			repl["domain_controller_ip_addresses"] = *in.DomainControllerIPAddress
+		}
+		if in.ExternalAccessIPAddress != nil {
+			repl["external_access_ip_address"] = in.ExternalAccessIPAddress
+		}
+		if in.Location != nil {
+			repl["location"] = azure.NormalizeLocation(*in.Location)
+		}
+		if in.ReplicaSetID != nil {
+			repl["replica_set_id"] = in.ReplicaSetID
+		}
+		if in.ServiceStatus != nil {
+			repl["service_status"] = in.ServiceStatus
+		}
+		if in.SubnetID != nil {
+			repl["subnet_id"] = in.SubnetID
+		}
+		if in.VnetSiteID != nil {
+			repl["vnet_site_id"] = in.VnetSiteID
+		}
+		ret = append(ret, repl)
+	}
+
+	return
+}
+
+func flattenDomainServiceResourceForest(input *aad.ResourceForestSettings) []interface{} {
+	if input == nil {
+		return make([]interface{}, 0)
+	}
+
+	forestTrust := make([]map[string]interface{}, 0)
+	if input.Settings != nil {
+		for _, rf := range *input.Settings {
+			ft := map[string]interface{}{
+				"name":                "",
+				"remote_dns_ips":      []string{},
+				"trust_direction":     "",
+				"trust_password":      "",
+				"trusted_domain_fqdn": "",
+			}
+
+			if rf.FriendlyName != nil {
+				ft["name"] = *rf.FriendlyName
+			}
+			if rf.RemoteDNSIps != nil {
+				remoteDnsIps := make([]string, 0)
+				r := strings.Split(*rf.RemoteDNSIps, ",")
+				for _, i := range r {
+					remoteDnsIps = append(remoteDnsIps, strings.TrimSpace(i))
+				}
+				ft["remote_dns_ips"] = remoteDnsIps
+			}
+			if rf.TrustDirection != nil {
+				ft["trust_direction"] = *rf.TrustDirection
+			}
+			if rf.TrustPassword != nil {
+				ft["trust_password"] = rf.TrustPassword
+			}
+			if rf.TrustedDomainFqdn != nil {
+				ft["trusted_domain_fqdn"] = *rf.TrustedDomainFqdn
+			}
+
+			forestTrust = append(forestTrust, ft)
+		}
+	}
+
+	result := map[string]interface{}{
+		"resource_forest": "",
+		"forest_trust":    forestTrust,
+	}
+	if input.ResourceForest != nil {
+		result["resource_forest"] = *input.ResourceForest
+	}
+
+	return []interface{}{result}
 }
 
 func flattenDomainServiceSecurity(input *aad.DomainSecuritySettings) []interface{} {
@@ -518,18 +792,26 @@ func flattenDomainServiceSecurity(input *aad.DomainSecuritySettings) []interface
 	}
 
 	result := map[string]bool{
-		"ntlm_v1":             false,
-		"sync_ntlm_passwords": false,
-		"tls_v1":              false,
+		"ntlm_v1_enabled":         false,
+		"sync_kerberos_passwords": false,
+		"sync_ntlm_passwords":     false,
+		"sync_on_prem_passwords":  false,
+		"tls_v1_enabled":          false,
 	}
 	if input.NtlmV1 == aad.NtlmV1Enabled {
-		result["ntlm_v1"] = true
+		result["ntlm_v1_enabled"] = true
+	}
+	if input.SyncKerberosPasswords == aad.SyncKerberosPasswordsEnabled {
+		result["sync_kerberos_passwords"] = true
 	}
 	if input.SyncNtlmPasswords == aad.SyncNtlmPasswordsEnabled {
 		result["sync_ntlm_passwords"] = true
 	}
+	if input.SyncOnPremPasswords == aad.SyncOnPremPasswordsEnabled {
+		result["sync_on_prem_passwords"] = true
+	}
 	if input.TLSV1 == aad.TLSV1Enabled {
-		result["tls_v1"] = true
+		result["tls_v1_enabled"] = true
 	}
 
 	return []interface{}{result}
