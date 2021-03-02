@@ -105,7 +105,6 @@ func SupportedTypedServices() []sdk.TypedServiceRegistration {
 
 func SupportedUntypedServices() []sdk.UntypedServiceRegistration {
 	return []sdk.UntypedServiceRegistration{
-		domainservices.Registration{},
 		advisor.Registration{},
 		analysisservices.Registration{},
 		apimanagement.Registration{},
@@ -137,6 +136,7 @@ func SupportedUntypedServices() []sdk.UntypedServiceRegistration {
 		devtestlabs.Registration{},
 		digitaltwins.Registration{},
 		dns.Registration{},
+		domainservices.Registration{},
 		eventgrid.Registration{},
 		eventhub.Registration{},
 		firewall.Registration{},
