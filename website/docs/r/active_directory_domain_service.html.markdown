@@ -170,7 +170,7 @@ The following arguments are supported:
 
 * `notifications` - (Optional) A `notifications` block as defined below.
 
-* `replica_set` - (Required) One or more `replica_set` blocks as defined below. A managed domain must have at least one replica set with the same location as the Active Directory Domain Service resource.
+* `replica_set` - (Required) One or more `replica_set` blocks as defined below. A managed domain must have at least one replica set, and the first must have the same location as the Active Directory Domain Service resource.
 
 * `resource_forest` - (Optional) A `resource_forest` block as defined below.
 
