@@ -25,9 +25,7 @@ func TestBase64EncodedString(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.Input, func(t *testing.T) {
-			_, errors := Base64EncodedString(tc.Input, "base64")
-
-			if len(errors) != tc.Errors {
+			if _, errors := Base64EncodedString(tc.Input, "base64"); len(errors) != tc.Errors {
 				t.Fatalf("Expected Base64 string to have %d not %d errors for %q: %v", tc.Errors, len(errors), tc.Input, errors)
 			}
 		})
