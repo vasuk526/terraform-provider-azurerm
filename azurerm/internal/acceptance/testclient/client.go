@@ -17,7 +17,7 @@ var (
 	// @tombuildsstuff: this is left in as a compatibility layer for the moment
 	// in the near future we'll remove this, and remove the "azuread" provider below
 	// but for the moment there's no need to remove the vendor here imminantly afaict
-	EnableBinaryTesting = false
+	EnableBinaryTesting = true
 
 	AzureProvider      *schema.Provider
 	SupportedProviders map[string]terraform.ResourceProvider
