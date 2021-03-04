@@ -2,6 +2,7 @@
 //       to re-generate this file, run 'make generate' in the root of the repository
 var services = mapOf(
         "apimanagement" to "API Management",
+        "domainservices" to "AadMgmt",
         "advisor" to "Advisor",
         "analysisservices" to "Analysis Services",
         "appconfiguration" to "App Configuration",

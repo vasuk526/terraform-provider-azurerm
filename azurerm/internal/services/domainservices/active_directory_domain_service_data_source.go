@@ -3,6 +3,8 @@ package domainservices
 import (
 	"fmt"
 
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
+
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -237,7 +239,8 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 
 func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).DomainServices.DomainServicesClient
-	ctx := meta.(*clients.Client).StopContext
+	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
+	defer cancel()
 
 	name := d.Get("name").(string)
 	resourceGroup := d.Get("resource_group_name").(string)
