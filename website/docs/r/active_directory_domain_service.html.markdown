@@ -122,10 +122,13 @@ resource "azurerm_resource_group" "aadds" {
 }
 
 resource "azurerm_active_directory_domain_service" "example" {
-  name                = "domain.hashicorp-example.net"
+  name                = "example-adds"
   location            = azurerm_resource_group.aadds.location
   resource_group_name = azurerm_resource_group.aadds.name
-  filtered_sync       = false
+
+  domain_name           = "widgetslogin.net"
+  sku                   = "Enterprise"
+  filtered_sync_enabled = false
 
   replica_set {
     location  = azurerm_virtual_network.deploy.location
@@ -133,12 +136,19 @@ resource "azurerm_active_directory_domain_service" "example" {
   }
 
   security {
-    ntlm_v1             = true
-    tls_v1              = true
-    sync_ntlm_passwords = true
+    sync_kerberos_passwords = true
+    sync_ntlm_passwords     = true
+    sync_on_prem_passwords  = true
   }
 
-  depends_on = [azurerm_subnet_network_security_group_association.deploy]
+  tags = {
+    Environment = "prod"
+  }
+
+  depends_on = [
+    azuread_service_principal.example,
+    azurerm_subnet_network_security_group_association.deploy,
+  ]
 }
 ```
 
@@ -156,11 +166,13 @@ The following arguments are supported:
 
 * `location` - (Required) The Azure location where the Domain Service exists. Changing this forces a new resource to be created.
 
-* `name` - (Required) The name for your managed Active Directory Domain Service resource.
+* `name` - (Required) The display name for your managed Active Directory Domain Service resource. Changing this forces a new resource to be created.
 
 * `notifications` - (Optional) A `notifications` block as defined below.
 
-* `replica_set` - (Required) One or more `replica_set` blocks as defined below.
+* `replica_set` - (Required) One or more `replica_set` blocks as defined below. A managed domain must have at least one replica set with the same location as the Active Directory Domain Service resource.
+
+* `resource_forest` - (Optional) A `resource_forest` block as defined below.
 
 * `resource_group_name` - (Required) The name of the Resource Group in which the Domain Service should exist. Changing this forces a new resource to be created.
 
@@ -172,27 +184,95 @@ The following arguments are supported:
 
 ---
 
-ldaps block
+An `ldaps` block supports the following:
+
+* `enabled` - (Required) Whether to enable secure LDAP for the managed domain. Defaults to `false`.
+
+* `external_access_enabled` - (Optional) Whether to enable external access to LDAPS over the Internet. Defaults to `false`.
+
+* `pfx_certificate` - (Required) The certificate/private key to use for LDAPS, as a base64-encoded TripleDES-SHA1 encrypted PKCS#12 bundle (PFX file).
+
+* `pfx_certificate_password` - (Required) The password to use for decrypting the PKCS#12 bundle (PFX file).
 
 ---
 
-notifications block
+A `notifications` block supports the following:
+
+* `additional_recipients` - (Optional) A list of additional email addresses to notify when there are alerts in the managed domain.
+
+* `notify_dc_admins` - (Optional) Whether to notify members of the _AAD DC Administrators_ group when there are alerts in the managed domain.
+
+* `notify_global_admins` - (Optional) Whether to notify all Global Administrators when there are alerts in the managed domain.
 
 ---
 
-replica_set blocks
+A `replica_set` block supports the following:
+
+* `location` - (Required) The Azure location in which to place the replica set.
+
+* `subnet_id` - (Required) The ID of the subnet in which to place the replica set.
 
 ---
 
-security block
+A `resource_forest` block supports the following:
+
+* `resource_forest` - (Required) TODO figure out what goes in this property and maybe rename it to something more sensical.
+
+* `forest_trust` - (Required) One or more `forest_trust` blocks as defined below.
+
+---
+
+A `forest_trust` block supports the following:
+
+* `name` - (Required) A display name to identity the forest trust.
+
+* `remote_dns_ips` - (Required) A list of at least two DNS server IP addresses for the trusted forest root domain.
+
+* `trust_direction` - (Required) The direction of trust.
+
+* `trust_password` - (Required) The password for authenticating the forest trust.
+
+* `trusted_domain_fqdn` - (Required) The fully-qualified DNS name for the trusted forest.
+
+---
+
+A `security` block supports the following:
+
+* `ntlm_v1_enabled` - (Optional) Whether to enable legacy NTLM v1 support. Defaults to `false`.
+
+* `sync_kerberos_passwords` - (Optional) Whether to synchronize Kerberos password hashes to the managed domain. Defaults to `false`.
+
+* `sync_ntlm_passwords` - (Optional) Whether to synchronize NTLM password hashes to the managed domain. Defaults to `false`.
+
+* `sync_on_prem_passwords` - (Optional) Whether to synchronize on-premises password hashes to the managed domain. Defaults to `false`.
+
+* `tls_v1_enabled` - (Optional) Whether to enable legacy TLS v1 support. Defaults to `false`.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the Domain Service.
+  
+* `deployment_id` - A unique ID for the managed domain deployment.
 
-TODO all computed attribs including in blocks
+---
+
+An `ldaps` block exports the following:
+
+* `external_access_ip_address` - The publicly routable IP address for LDAPS clients to connect to.
+
+---
+
+A `replica_set` block exports the following:
+
+* `domain_controller_ip_addresses` - A list of subnet IP addresses for the domain controllers in the replica set, typically two.
+
+* `external_access_ip_address` - The publicly routable IP addresses for domain services.
+
+* `replica_set_id` - A unique ID for the replica set.
+
+* `service_status` - The current service status for the replica set.
 
 ## Timeouts
 

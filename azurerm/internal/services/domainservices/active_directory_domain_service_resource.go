@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
-	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -32,7 +31,7 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 		Delete: resourceActiveDirectoryDomainServiceDelete,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(120 * time.Minute),
+			Create: schema.DefaultTimeout(180 * time.Minute),
 			Read:   schema.DefaultTimeout(5 * time.Minute),
 			Update: schema.DefaultTimeout(120 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
@@ -50,6 +49,7 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 
 			"domain_configuration_type": {
 				Type:     schema.TypeString,
+				ForceNew: true,
 				Optional: true,
 				Default:  "",
 				ValidateFunc: validation.StringInSlice([]string{
@@ -74,12 +74,13 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 			"ldaps": {
 				Type:     schema.TypeList,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"enabled": {
 							Type:     schema.TypeBool,
-							Computed: true,
+							Required: true,
 						},
 
 						"external_access_enabled": {
@@ -151,7 +152,7 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 
 			"replica_set": {
 				Type:     schema.TypeList,
-				Required: true, // TODO: make required
+				Required: true,
 				MinItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -354,7 +355,6 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 			FilteredSync:           filteredSync,
 			LdapsSettings:          expandDomainServiceLdaps(d.Get("ldaps").([]interface{})),
 			NotificationSettings:   expandDomainServiceNotifications(d.Get("notifications").([]interface{})),
-			ReplicaSets:            expandDomainServiceReplicaSets(d.Get("replica_set").([]interface{})),
 			ResourceForestSettings: expandDomainServiceResourceForest(d.Get("resource_forest").([]interface{})),
 			Sku:                    utils.String(d.Get("sku").(string)),
 		},
@@ -364,6 +364,13 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 
 	if v, ok := d.GetOk("domain_configuration_type"); ok && v != "" {
 		domainService.DomainServiceProperties.DomainConfigurationType = utils.String(d.Get("domain_configuration_type").(string))
+	}
+
+	// At creation time, only the first replica set is created
+	replicaSets := expandDomainServiceReplicaSets(d.Get("replica_set").([]interface{}))
+	if replicaSets != nil && len(*replicaSets) > 0 {
+		initialReplicaSets := []aad.ReplicaSet{(*replicaSets)[0]}
+		domainService.DomainServiceProperties.ReplicaSets = &initialReplicaSets
 	}
 
 	future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
@@ -386,7 +393,35 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {
-		return fmt.Errorf("waiting for both Domain Service controllers to become available: %+v", err)
+		return fmt.Errorf("waiting for both domain controllers to become available: %+v", err)
+	}
+
+	// If more than one replica set is configured, create the additional ones now
+	if replicaSets != nil && len(*replicaSets) > 1 {
+		// note: all properties must be specified, PATCH is not supported
+		domainService.DomainServiceProperties.ReplicaSets = replicaSets
+
+		future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
+		if err != nil {
+			return fmt.Errorf("updating %s: %+v", id.String(), err)
+		}
+		if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
+			return fmt.Errorf("waiting for update of %s: %+v", id.String(), err)
+		}
+
+		// Wait for the additional replica sets to become fully available
+		stateConf := &resource.StateChangeConf{
+			Pending:      []string{"pending"},
+			Target:       []string{"available"},
+			Refresh:      domainServiceControllerRefreshFunc(ctx, client, id),
+			Delay:        30 * time.Second,
+			PollInterval: 10 * time.Second,
+			Timeout:      1 * time.Hour,
+		}
+
+		if _, err := stateConf.WaitForState(); err != nil {
+			return fmt.Errorf("waiting for both domain controllers to become available for all replica sets: %+v", err)
+		}
 	}
 
 	d.SetId(id.ID())
@@ -460,28 +495,28 @@ func resourceActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta inter
 }
 
 func resourceActiveDirectoryDomainServiceDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*clients.Client).DomainServices.DomainServicesClient
-	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
-	defer cancel()
-
-	id, err := parse.DomainServiceID(d.Id())
-	if err != nil {
-		return err
-	}
-
-	future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
-	if err != nil {
-		if response.WasNotFound(future.Response()) {
-			return nil
-		}
-		return fmt.Errorf("deleting %s: %+v", id.String(), err)
-	}
-
-	if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
-		if !response.WasNotFound(future.Response()) {
-			return fmt.Errorf("waiting for deletion of %s: %+v", id.String(), err)
-		}
-	}
+	//client := meta.(*clients.Client).DomainServices.DomainServicesClient
+	//ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
+	//defer cancel()
+	//
+	//id, err := parse.DomainServiceID(d.Id())
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
+	//if err != nil {
+	//	if response.WasNotFound(future.Response()) {
+	//		return nil
+	//	}
+	//	return fmt.Errorf("deleting %s: %+v", id.String(), err)
+	//}
+	//
+	//if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
+	//	if !response.WasNotFound(future.Response()) {
+	//		return fmt.Errorf("waiting for deletion of %s: %+v", id.String(), err)
+	//	}
+	//}
 
 	return nil
 }
@@ -495,6 +530,9 @@ func domainServiceControllerRefreshFunc(ctx context.Context, client *aad.DomainS
 		}
 		if resp.ReplicaSets != nil {
 			for _, repl := range *resp.ReplicaSets {
+				if repl.ServiceStatus == nil || !strings.EqualFold(*repl.ServiceStatus, "Running") {
+					return resp, "pending", nil
+				}
 				// when a domain controller is online, its IP address will be returned
 				if repl.DomainControllerIPAddress == nil || len(*repl.DomainControllerIPAddress) < 2 {
 					return resp, "pending", nil
@@ -510,17 +548,18 @@ func expandDomainServiceLdaps(input []interface{}) (ldaps *aad.LdapsSettings) {
 		Ldaps: aad.LdapsDisabled,
 	}
 
-	if len(input) == 0 {
-		return
-	}
-
-	v := input[0].(map[string]interface{})
-	ldaps.PfxCertificate = utils.String(v["pfx_certificate"].(string))
-	ldaps.PfxCertificatePassword = utils.String(v["pfx_certificate_password"].(string))
-	if v["external_access_enabled"].(bool) {
-		ldaps.ExternalAccess = aad.Enabled
-	} else {
-		ldaps.ExternalAccess = aad.Disabled
+	if len(input) > 0 {
+		v := input[0].(map[string]interface{})
+		if v["enabled"].(bool) {
+			ldaps.Ldaps = aad.LdapsEnabled
+		}
+		ldaps.PfxCertificate = utils.String(v["pfx_certificate"].(string))
+		ldaps.PfxCertificatePassword = utils.String(v["pfx_certificate_password"].(string))
+		if v["external_access_enabled"].(bool) {
+			ldaps.ExternalAccess = aad.Enabled
+		} else {
+			ldaps.ExternalAccess = aad.Disabled
+		}
 	}
 
 	return
@@ -535,7 +574,9 @@ func expandDomainServiceNotifications(input []interface{}) *aad.NotificationSett
 
 	additionalRecipients := make([]string, 0)
 	if ar, ok := v["additional_recipients"]; ok {
-		additionalRecipients = ar.([]string)
+		for _, r := range ar.(*schema.Set).List() {
+			additionalRecipients = append(additionalRecipients, r.(string))
+		}
 	}
 
 	notifyDcAdmins := aad.NotifyDcAdminsDisabled
@@ -644,26 +685,26 @@ func expandDomainServiceSecurity(input []interface{}) *aad.DomainSecuritySetting
 }
 
 func flattenDomainServiceLdaps(input *aad.LdapsSettings) []interface{} {
-	if input == nil {
-		return make([]interface{}, 0)
-	}
-
 	result := map[string]interface{}{
-		"enabled":                 false,
-		"external_access_enabled": false,
+		"enabled":                  false,
+		"external_access_enabled":  false,
+		"pfx_certificate":          "",
+		"pfx_certificate_password": "",
 	}
 
-	if input.ExternalAccess == aad.Enabled {
-		result["external_access_enabled"] = true
-	}
-	if input.Ldaps == aad.LdapsEnabled {
-		result["enabled"] = true
-	}
-	if pfxCertificate := input.PfxCertificate; pfxCertificate != nil {
-		result["pfx_certificate"] = *pfxCertificate
-	}
-	if pfxCertificatePassword := input.PfxCertificatePassword; pfxCertificatePassword != nil {
-		result["pfx_certificate_password"] = *pfxCertificatePassword
+	if input != nil {
+		if input.ExternalAccess == aad.Enabled {
+			result["external_access_enabled"] = true
+		}
+		if input.Ldaps == aad.LdapsEnabled {
+			result["enabled"] = true
+		}
+		if input.PfxCertificate != nil {
+			result["pfx_certificate"] = *input.PfxCertificate
+		}
+		if input.PfxCertificatePassword != nil {
+			result["pfx_certificate_password"] = *input.PfxCertificatePassword
+		}
 	}
 
 	return []interface{}{result}
@@ -679,7 +720,7 @@ func flattenDomainServiceNotifications(input *aad.NotificationSettings) []interf
 		"notify_dc_admins":      false,
 		"notify_global_admins":  false,
 	}
-	if input.AdditionalRecipients != nil && len(*input.AdditionalRecipients) > 0 {
+	if input.AdditionalRecipients != nil {
 		result["additional_recipients"] = *input.AdditionalRecipients
 	}
 	if input.NotifyDcAdmins == aad.NotifyDcAdminsEnabled {
@@ -781,6 +822,10 @@ func flattenDomainServiceResourceForest(input *aad.ResourceForestSettings) []int
 	}
 	if input.ResourceForest != nil {
 		result["resource_forest"] = *input.ResourceForest
+	}
+
+	if result["resource_forest"].(string) == "" && len(result["forest_trust"].([]map[string]interface{})) == 0 {
+		return make([]interface{}, 0)
 	}
 
 	return []interface{}{result}

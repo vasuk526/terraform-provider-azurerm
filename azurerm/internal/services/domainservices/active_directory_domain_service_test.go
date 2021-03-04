@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -22,7 +23,7 @@ type ActiveDirectoryDomainServiceResource struct {
 
 func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_active_directory_domain_service", "test")
-	dataSourceName := "data.azurerm_active_directory_domain_service"
+	dataSourceName := "data.azurerm_active_directory_domain_service.test"
 	r := ActiveDirectoryDomainServiceResource{
 		adminPassword: fmt.Sprintf("%s%s", "p@$$Wd", acctest.RandString(6)),
 	}
@@ -35,14 +36,41 @@ func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 				resource.TestCheckResourceAttr(data.ResourceName, "replica_set.0.domain_controller_ip_addresses.#", "2"),
 			),
 		},
+		data.ImportStep("ldaps.0.pfx_certificate", "ldaps.0.pfx_certificate_password"),
 		{
 			Config: r.dataSource(data),
 			Check: resource.ComposeTestCheckFunc(
-				check.That(data.ResourceName).ExistsInAzure(r),
-				resource.TestCheckResourceAttr(dataSourceName, "replica_set.0.domain_controller_ip_addresses.#", "2"),
+				check.That(dataSourceName).ExistsInAzure(r),
+				check.That(dataSourceName).Key("filtered_sync_enabled").HasValue("false"),
+				check.That(dataSourceName).Key("ldaps.#").HasValue("1"),
+				check.That(dataSourceName).Key("ldaps.0.enabled").HasValue("false"),
+				check.That(dataSourceName).Key("ldaps.0.external_access_enabled").HasValue("false"),
+				check.That(dataSourceName).Key("location").HasValue(azure.NormalizeLocation(data.Locations.Primary)),
+				check.That(dataSourceName).Key("notifications.#").HasValue("1"),
+				check.That(dataSourceName).Key("notifications.0.additional_recipients.#").HasValue("2"),
+				check.That(dataSourceName).Key("notifications.0.notify_dc_admins").HasValue("true"),
+				check.That(dataSourceName).Key("notifications.0.notify_global_admins").HasValue("true"),
+				check.That(dataSourceName).Key("replica_sets.#").HasValue("2"),
+				check.That(dataSourceName).Key("replica_sets.0.domain_controller_ip_addresses.#").HasValue("2"),
+				check.That(dataSourceName).Key("replica_sets.0.location").HasValue(azure.NormalizeLocation(data.Locations.Primary)),
+				check.That(dataSourceName).Key("replica_sets.0.replica_set_id").Exists(),
+				check.That(dataSourceName).Key("replica_sets.0.service_status").Exists(),
+				check.That(dataSourceName).Key("replica_sets.0.subnet_id").Exists(),
+				check.That(dataSourceName).Key("replica_sets.1.domain_controller_ip_addresses.#").HasValue("2"),
+				check.That(dataSourceName).Key("replica_sets.1.location").HasValue(azure.NormalizeLocation(data.Locations.Secondary)),
+				check.That(dataSourceName).Key("replica_sets.1.replica_set_id").Exists(),
+				check.That(dataSourceName).Key("replica_sets.1.service_status").Exists(),
+				check.That(dataSourceName).Key("replica_sets.1.subnet_id").Exists(),
+				check.That(dataSourceName).Key("resource_forest.#").HasValue("0"),
+				check.That(dataSourceName).Key("security.#").HasValue("1"),
+				check.That(dataSourceName).Key("security.0.ntlm_v1_enabled").HasValue("true"),
+				check.That(dataSourceName).Key("security.0.sync_kerberos_passwords").HasValue("true"),
+				check.That(dataSourceName).Key("security.0.sync_ntlm_passwords").HasValue("true"),
+				check.That(dataSourceName).Key("security.0.sync_on_prem_passwords").HasValue("true"),
+				check.That(dataSourceName).Key("security.0.tls_v1_enabled").HasValue("true"),
+				check.That(dataSourceName).Key("sku").HasValue("Enterprise"),
 			),
 		},
-		data.ImportStep("ldaps.0.pfx_certificate", "ldaps.0.pfx_certificate_password"),
 		{
 			Config:      r.requiresImport(data),
 			ExpectError: acceptance.RequiresImportError(data.ResourceType),
@@ -212,7 +240,7 @@ resource "azuread_group_member" "test" {
 }
 
 resource "azurerm_active_directory_domain_service" "test" {
-  name                = "acctest-%[5]s.net"
+  name                = "acctest-%[5]s"
   location            = azurerm_resource_group.aadds.location
   resource_group_name = azurerm_resource_group.aadds.name
 
@@ -221,6 +249,7 @@ resource "azurerm_active_directory_domain_service" "test" {
   filtered_sync_enabled = false
 
   //ldaps {
+  //  enabled                  = true
   //  external_access          = true
   //  pfx_certificate          = "TODO Generate a dummy pfx key+cert (https://docs.microsoft.com/en-us/azure/active-directory-domain-services/tutorial-configure-ldaps)"
   //  pfx_certificate_password = "test"
@@ -236,7 +265,7 @@ resource "azurerm_active_directory_domain_service" "test" {
     location  = azurerm_virtual_network.test_one.location
     subnet_id = azurerm_subnet.aadds_one.id
   }
-
+  
   replica_set {
     location  = azurerm_virtual_network.test_two.location
     subnet_id = azurerm_subnet.aadds_two.id
@@ -248,6 +277,10 @@ resource "azurerm_active_directory_domain_service" "test" {
     sync_ntlm_passwords     = true
     sync_on_prem_passwords  = true
     tls_v1_enabled          = true
+  }
+
+  tags = {
+    Environment = "test"
   }
 
   depends_on = [
@@ -276,9 +309,21 @@ func (r ActiveDirectoryDomainServiceResource) requiresImport(data acceptance.Tes
 %[1]s
 
 resource "azurerm_active_directory_domain_service" "import" {
+  domain_name         = azurerm_active_directory_domain_service.test.domain_name
+  location            = azurerm_active_directory_domain_service.test.location
   name                = azurerm_active_directory_domain_service.test.name
-  location            = azurerm_resource_group.aadds.location
-  resource_group_name = azurerm_resource_group.aadds.name
+  resource_group_name = azurerm_active_directory_domain_service.test.resource_group_name
+  sku                 = azurerm_active_directory_domain_service.test.sku
+
+  replica_set {
+    location  = azurerm_active_directory_domain_service.test.replica_set.0.location
+    subnet_id = azurerm_active_directory_domain_service.test.replica_set.0.subnet_id
+  }
+
+  replica_set {
+    location  = azurerm_active_directory_domain_service.test.replica_set.1.location
+    subnet_id = azurerm_active_directory_domain_service.test.replica_set.1.subnet_id
+  }
 }
 `, r.complete(data))
 }
