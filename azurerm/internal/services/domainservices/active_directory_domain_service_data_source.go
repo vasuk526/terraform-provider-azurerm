@@ -3,11 +3,13 @@ package domainservices
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
@@ -18,15 +20,15 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 		Read: dataSourceArmActiveDirectoryDomainServiceRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringIsNotWhiteSpace,
+			"domain_configuration_type": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 
-			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
-
-			"location": azure.SchemaLocationForDataSource(),
+			"domain_name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 
 			"filtered_sync_enabled": {
 				Type:     schema.TypeBool,
@@ -66,6 +68,14 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
+			"location": azure.SchemaLocationForDataSource(),
+
+			"name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringIsNotWhiteSpace,
+			},
+
 			"notifications": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -84,6 +94,54 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 						},
 						"notify_global_admins": {
 							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"replica_sets": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// TODO: add health-related attributes
+
+						"domain_controller_ip_addresses": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"location": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"replica_set_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"service_status": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"subnet_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"vnet_site_id": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
 					},
@@ -139,53 +197,7 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			"replica_sets": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// TODO: add health-related attributes
-
-						"domain_controller_ip_addresses": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
-
-						"external_access_ip_address": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"location": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"replica_set_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"service_status": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"subnet_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"vnet_site_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
-				},
-			},
+			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
 
 			"security": {
 				Type:     schema.TypeList,
@@ -224,6 +236,8 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"tags": tags.SchemaDataSource(),
 		},
 	}
 }
@@ -269,15 +283,15 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 		d.Set("sku", props.Sku)
 
 		if err := d.Set("ldaps", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
-			return fmt.Errorf("Error setting `ldaps`: %+v", err)
+			return fmt.Errorf("setting `ldaps`: %+v", err)
 		}
 
 		if err := d.Set("notifications", flattenDomainServiceNotifications(props.NotificationSettings)); err != nil {
-			return fmt.Errorf("Error setting `notifications`: %+v", err)
+			return fmt.Errorf("setting `notifications`: %+v", err)
 		}
 
 		if err := d.Set("replica_sets", flattenDomainServiceReplicaSets(props.ReplicaSets)); err != nil {
-			return fmt.Errorf("Error setting `replica_sets`: %+v", err)
+			return fmt.Errorf("setting `replica_sets`: %+v", err)
 		}
 
 		if err := d.Set("resource_forest", flattenDomainServiceResourceForest(props.ResourceForestSettings)); err != nil {
@@ -285,9 +299,9 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 		}
 
 		if err := d.Set("security", flattenDomainServiceSecurity(props.DomainSecuritySettings)); err != nil {
-			return fmt.Errorf("Error setting `security`: %+v", err)
+			return fmt.Errorf("setting `security`: %+v", err)
 		}
 	}
 
-	return nil
+	return tags.FlattenAndSet(d, resp.Tags)
 }
