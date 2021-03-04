@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-azure-helpers/response"
+
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -366,23 +368,25 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 		domainService.DomainServiceProperties.DomainConfigurationType = utils.String(d.Get("domain_configuration_type").(string))
 	}
 
-	// At creation time, only the first replica set is created
-	replicaSets := expandDomainServiceReplicaSets(d.Get("replica_set").([]interface{}))
-	if replicaSets != nil && len(*replicaSets) > 0 {
-		initialReplicaSets := []aad.ReplicaSet{(*replicaSets)[0]}
-		domainService.DomainServiceProperties.ReplicaSets = &initialReplicaSets
+	if d.IsNewResource() {
+		// At creation time, only the first replica set is created
+		initialReplicaSet := d.Get("replica_set").([]interface{})[0]
+		domainService.DomainServiceProperties.ReplicaSets = expandDomainServiceReplicaSets([]interface{}{initialReplicaSet})
+	} else {
+		// When updating, merge the primary and additional replica sets
+		domainService.DomainServiceProperties.ReplicaSets = expandDomainServiceReplicaSets(d.Get("replica_set").([]interface{}))
 	}
 
 	future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
 	if err != nil {
-		return fmt.Errorf("creating %s: %+v", id.String(), err)
+		return fmt.Errorf("creating/updating %s: %+v", id.String(), err)
 	}
 	if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
-		return fmt.Errorf("waiting for creation of %s: %+v", id.String(), err)
+		return fmt.Errorf("waiting for %s: %+v", id.String(), err)
 	}
 
 	// A fully deployed domain service has 2 domain controllers per replica set, but the create operation completes early before the DCs are online.
-	// Further operations are blocked until both controllers are up.
+	// The domain service is still provisioning and further operations are blocked until both controllers are up.
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"available"},
@@ -393,34 +397,42 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {
-		return fmt.Errorf("waiting for both domain controllers to become available: %+v", err)
+		var target string
+		if d.IsNewResource() {
+			target = "primary replica set"
+		} else {
+			target = "all replica sets"
+		}
+		return fmt.Errorf("waiting for both domain controllers to become available in %s for %s: %+v", target, id.String(), err)
 	}
 
-	// If more than one replica set is configured, create the additional ones now
-	if replicaSets != nil && len(*replicaSets) > 1 {
-		// note: all properties must be specified, PATCH is not supported
-		domainService.DomainServiceProperties.ReplicaSets = replicaSets
+	if d.IsNewResource() {
+		// If more than one replica set is configured, create the additional ones now
+		if replicaSets := d.Get("replica_set").([]interface{}); len(replicaSets) > 1 {
+			// note: all properties must be specified, PATCH is not supported, so re-use the original domainService model
+			domainService.DomainServiceProperties.ReplicaSets = expandDomainServiceReplicaSets(replicaSets)
 
-		future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
-		if err != nil {
-			return fmt.Errorf("updating %s: %+v", id.String(), err)
-		}
-		if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
-			return fmt.Errorf("waiting for update of %s: %+v", id.String(), err)
-		}
+			future, err := client.CreateOrUpdate(ctx, id.ResourceGroup, id.Name, domainService)
+			if err != nil {
+				return fmt.Errorf("updating %s: %+v", id.String(), err)
+			}
+			if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
+				return fmt.Errorf("waiting for update of %s: %+v", id.String(), err)
+			}
 
-		// Wait for the additional replica sets to become fully available
-		stateConf := &resource.StateChangeConf{
-			Pending:      []string{"pending"},
-			Target:       []string{"available"},
-			Refresh:      domainServiceControllerRefreshFunc(ctx, client, id),
-			Delay:        30 * time.Second,
-			PollInterval: 10 * time.Second,
-			Timeout:      1 * time.Hour,
-		}
+			// Wait for the additional replica sets to become fully available
+			stateConf := &resource.StateChangeConf{
+				Pending:      []string{"pending"},
+				Target:       []string{"available"},
+				Refresh:      domainServiceControllerRefreshFunc(ctx, client, id),
+				Delay:        30 * time.Second,
+				PollInterval: 10 * time.Second,
+				Timeout:      1 * time.Hour,
+			}
 
-		if _, err := stateConf.WaitForState(); err != nil {
-			return fmt.Errorf("waiting for both domain controllers to become available for all replica sets: %+v", err)
+			if _, err := stateConf.WaitForState(); err != nil {
+				return fmt.Errorf("waiting for both domain controllers to become available in additional replica sets for %s: %+v", id.String(), err)
+			}
 		}
 	}
 
@@ -495,28 +507,28 @@ func resourceActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta inter
 }
 
 func resourceActiveDirectoryDomainServiceDelete(d *schema.ResourceData, meta interface{}) error {
-	//client := meta.(*clients.Client).DomainServices.DomainServicesClient
-	//ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
-	//defer cancel()
-	//
-	//id, err := parse.DomainServiceID(d.Id())
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
-	//if err != nil {
-	//	if response.WasNotFound(future.Response()) {
-	//		return nil
-	//	}
-	//	return fmt.Errorf("deleting %s: %+v", id.String(), err)
-	//}
-	//
-	//if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
-	//	if !response.WasNotFound(future.Response()) {
-	//		return fmt.Errorf("waiting for deletion of %s: %+v", id.String(), err)
-	//	}
-	//}
+	client := meta.(*clients.Client).DomainServices.DomainServicesClient
+	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
+	defer cancel()
+
+	id, err := parse.DomainServiceID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
+	if err != nil {
+		if response.WasNotFound(future.Response()) {
+			return nil
+		}
+		return fmt.Errorf("deleting %s: %+v", id.String(), err)
+	}
+
+	if err = future.WaitForCompletionRef(ctx, client.Client); err != nil {
+		if !response.WasNotFound(future.Response()) {
+			return fmt.Errorf("waiting for deletion of %s: %+v", id.String(), err)
+		}
+	}
 
 	return nil
 }

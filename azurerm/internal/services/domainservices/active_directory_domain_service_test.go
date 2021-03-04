@@ -34,6 +34,7 @@ func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				resource.TestCheckResourceAttr(data.ResourceName, "replica_set.0.domain_controller_ip_addresses.#", "2"),
+				resource.TestCheckResourceAttr(data.ResourceName, "replica_set.1.domain_controller_ip_addresses.#", "2"),
 			),
 		},
 		data.ImportStep("ldaps.0.pfx_certificate", "ldaps.0.pfx_certificate_password"),
