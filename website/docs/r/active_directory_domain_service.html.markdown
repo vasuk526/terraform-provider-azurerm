@@ -16,8 +16,8 @@ Manages an Active Directory Domain Service.
 
 ```hcl
 resource "azurerm_resource_group" "deploy" {
-  name     = "deploy-rg"
-  location = "westeurope"
+  name     = "example-resources"
+  location = "West Europe"
 }
 
 resource "azurerm_virtual_network" "deploy" {
