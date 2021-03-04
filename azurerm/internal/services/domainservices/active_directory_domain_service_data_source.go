@@ -18,6 +18,14 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 		Read: dataSourceArmActiveDirectoryDomainServiceRead,
 
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringIsNotWhiteSpace,
+			},
+
+			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
+
 			"domain_configuration_type": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -33,46 +41,7 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				Computed: true,
 			},
 
-			"ldaps": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-
-						"external_access_enabled": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-
-						"external_access_ip_address": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"pfx_certificate": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"pfx_certificate_password": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
-				},
-			},
-
 			"location": azure.SchemaLocationForDataSource(),
-
-			"name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringIsNotWhiteSpace,
-			},
 
 			"notifications": {
 				Type:     schema.TypeList,
@@ -118,12 +87,12 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 							Computed: true,
 						},
 
-						"location": {
+						"id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
 
-						"replica_set_id": {
+						"location": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -134,11 +103,6 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 						},
 
 						"subnet_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"vnet_site_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -195,7 +159,38 @@ func dataSourceArmActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
+			"secure_ldap": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"external_access_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"pfx_certificate": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"pfx_certificate_password": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 
 			"security": {
 				Type:     schema.TypeList,
@@ -280,10 +275,6 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 
 		d.Set("sku", props.Sku)
 
-		if err := d.Set("ldaps", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
-			return fmt.Errorf("setting `ldaps`: %+v", err)
-		}
-
 		if err := d.Set("notifications", flattenDomainServiceNotifications(props.NotificationSettings)); err != nil {
 			return fmt.Errorf("setting `notifications`: %+v", err)
 		}
@@ -294,6 +285,10 @@ func dataSourceArmActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta 
 
 		if err := d.Set("resource_forest", flattenDomainServiceResourceForest(props.ResourceForestSettings)); err != nil {
 			return fmt.Errorf("setting `resource_forest`: %+v", err)
+		}
+
+		if err := d.Set("secure_ldap", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
+			return fmt.Errorf("setting `secure_ldap`: %+v", err)
 		}
 
 		if err := d.Set("security", flattenDomainServiceSecurity(props.DomainSecuritySettings)); err != nil {

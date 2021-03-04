@@ -37,15 +37,15 @@ func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 				resource.TestCheckResourceAttr(data.ResourceName, "replica_set.1.domain_controller_ip_addresses.#", "2"),
 			),
 		},
-		data.ImportStep("ldaps.0.pfx_certificate", "ldaps.0.pfx_certificate_password"),
+		data.ImportStep("secure_ldap.0.pfx_certificate", "secure_ldap.0.pfx_certificate_password"),
 		{
 			Config: r.dataSource(data),
 			Check: resource.ComposeTestCheckFunc(
 				check.That(dataSourceName).ExistsInAzure(r),
 				check.That(dataSourceName).Key("filtered_sync_enabled").HasValue("false"),
-				check.That(dataSourceName).Key("ldaps.#").HasValue("1"),
-				check.That(dataSourceName).Key("ldaps.0.enabled").HasValue("false"),
-				check.That(dataSourceName).Key("ldaps.0.external_access_enabled").HasValue("false"),
+				check.That(dataSourceName).Key("secure_ldap.#").HasValue("1"),
+				check.That(dataSourceName).Key("secure_ldap.0.enabled").HasValue("false"),
+				check.That(dataSourceName).Key("secure_ldap.0.external_access_enabled").HasValue("false"),
 				check.That(dataSourceName).Key("location").HasValue(azure.NormalizeLocation(data.Locations.Primary)),
 				check.That(dataSourceName).Key("notifications.#").HasValue("1"),
 				check.That(dataSourceName).Key("notifications.0.additional_recipients.#").HasValue("2"),
@@ -54,12 +54,12 @@ func TestAccActiveDirectoryDomainService_complete(t *testing.T) {
 				check.That(dataSourceName).Key("replica_sets.#").HasValue("2"),
 				check.That(dataSourceName).Key("replica_sets.0.domain_controller_ip_addresses.#").HasValue("2"),
 				check.That(dataSourceName).Key("replica_sets.0.location").HasValue(azure.NormalizeLocation(data.Locations.Primary)),
-				check.That(dataSourceName).Key("replica_sets.0.replica_set_id").Exists(),
+				check.That(dataSourceName).Key("replica_sets.0.id").Exists(),
 				check.That(dataSourceName).Key("replica_sets.0.service_status").Exists(),
 				check.That(dataSourceName).Key("replica_sets.0.subnet_id").Exists(),
 				check.That(dataSourceName).Key("replica_sets.1.domain_controller_ip_addresses.#").HasValue("2"),
 				check.That(dataSourceName).Key("replica_sets.1.location").HasValue(azure.NormalizeLocation(data.Locations.Secondary)),
-				check.That(dataSourceName).Key("replica_sets.1.replica_set_id").Exists(),
+				check.That(dataSourceName).Key("replica_sets.1.id").Exists(),
 				check.That(dataSourceName).Key("replica_sets.1.service_status").Exists(),
 				check.That(dataSourceName).Key("replica_sets.1.subnet_id").Exists(),
 				check.That(dataSourceName).Key("resource_forest.#").HasValue("0"),
@@ -249,13 +249,6 @@ resource "azurerm_active_directory_domain_service" "test" {
   sku                   = "Enterprise"
   filtered_sync_enabled = false
 
-  //ldaps {
-  //  enabled                  = true
-  //  external_access          = true
-  //  pfx_certificate          = "TODO Generate a dummy pfx key+cert (https://docs.microsoft.com/en-us/azure/active-directory-domain-services/tutorial-configure-ldaps)"
-  //  pfx_certificate_password = "test"
-  //}
-
   notifications {
     additional_recipients = ["notifyA@example.net", "notifyB@example.org"]
     notify_dc_admins      = true
@@ -271,6 +264,13 @@ resource "azurerm_active_directory_domain_service" "test" {
     location  = azurerm_virtual_network.test_two.location
     subnet_id = azurerm_subnet.aadds_two.id
   }
+
+  //secure_ldap {
+  //  enabled                  = true
+  //  external_access          = true
+  //  pfx_certificate          = "TODO Generate a dummy pfx key+cert (https://docs.microsoft.com/en-us/azure/active-directory-domain-services/tutorial-configure-ldaps)"
+  //  pfx_certificate_password = "test"
+  //}
 
   security {
     ntlm_v1_enabled         = true

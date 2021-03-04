@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-azure-helpers/response"
-
 	"github.com/Azure/azure-sdk-for-go/services/domainservices/mgmt/2020-01-01/aad"
+	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -44,9 +43,32 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{ // TODO: add computed attributes: deployment_id, sync_owner
-			"deployment_id": {
+			"name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation
+			},
+
+			"location": azure.SchemaLocation(),
+
+			"resource_group_name": azure.SchemaResourceGroupName(),
+
+			"domain_name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation, first prefix must be 15 chars or less
+			},
+
+			"sku": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Required: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Standard",
+					"Enterprise",
+					"Premium",
+				}, false),
 			},
 
 			"domain_configuration_type": {
@@ -60,65 +82,10 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 				}, false),
 			},
 
-			"domain_name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation, first prefix must be 15 chars or less
-			},
-
 			"filtered_sync_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
-			},
-
-			"ldaps": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:     schema.TypeBool,
-							Required: true,
-						},
-
-						"external_access_enabled": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-
-						"external_access_ip_address": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"pfx_certificate": {
-							Type:         schema.TypeString,
-							Required:     true,
-							Sensitive:    true,
-							ValidateFunc: azValidate.Base64EncodedString,
-						},
-
-						"pfx_certificate_password": {
-							Type:      schema.TypeString,
-							Required:  true,
-							Sensitive: true,
-						},
-					},
-				},
-			},
-
-			"location": azure.SchemaLocation(),
-
-			"name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringIsNotEmpty, // TODO: proper validation
 			},
 
 			"notifications": {
@@ -173,6 +140,11 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 							Computed: true,
 						},
 
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
 						"location": {
 							Type:             schema.TypeString,
 							Required:         true,
@@ -180,11 +152,6 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 							ValidateFunc:     location.EnhancedValidate,
 							StateFunc:        location.StateFunc,
 							DiffSuppressFunc: location.DiffSuppressFunc,
-						},
-
-						"replica_set_id": {
-							Type:     schema.TypeString,
-							Computed: true,
 						},
 
 						"service_status": {
@@ -197,11 +164,6 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 							Required:     true,
 							ForceNew:     true, // TODO: figure out if this is needed
 							ValidateFunc: azure.ValidateResourceID,
-						},
-
-						"vnet_site_id": {
-							Type:     schema.TypeString,
-							Computed: true,
 						},
 					},
 				},
@@ -265,7 +227,44 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			"resource_group_name": azure.SchemaResourceGroupName(),
+			"secure_ldap": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+
+						"external_access_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+
+						"external_access_ip_address": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"pfx_certificate": {
+							Type:         schema.TypeString,
+							Required:     true,
+							Sensitive:    true,
+							ValidateFunc: azValidate.Base64EncodedString,
+						},
+
+						"pfx_certificate_password": {
+							Type:      schema.TypeString,
+							Required:  true,
+							Sensitive: true,
+						},
+					},
+				},
+			},
 
 			"security": {
 				Type:     schema.TypeList,
@@ -307,24 +306,19 @@ func resourceActiveDirectoryDomainService() *schema.Resource {
 				},
 			},
 
-			"sku": {
-				Type:     schema.TypeString,
-				Required: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"Standard",
-					"Enterprise",
-					"Premium",
-				}, false),
-			},
-
 			"tags": tags.Schema(),
+
+			"deployment_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).DomainServices.DomainServicesClient
-	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
+	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
 
 	name := d.Get("name").(string)
@@ -355,7 +349,7 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 			DomainName:             utils.String(d.Get("domain_name").(string)),
 			DomainSecuritySettings: expandDomainServiceSecurity(d.Get("security").([]interface{})),
 			FilteredSync:           filteredSync,
-			LdapsSettings:          expandDomainServiceLdaps(d.Get("ldaps").([]interface{})),
+			LdapsSettings:          expandDomainServiceLdaps(d.Get("secure_ldap").([]interface{})),
 			NotificationSettings:   expandDomainServiceNotifications(d.Get("notifications").([]interface{})),
 			ResourceForestSettings: expandDomainServiceResourceForest(d.Get("resource_forest").([]interface{})),
 			Sku:                    utils.String(d.Get("sku").(string)),
@@ -387,13 +381,14 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 
 	// A fully deployed domain service has 2 domain controllers per replica set, but the create operation completes early before the DCs are online.
 	// The domain service is still provisioning and further operations are blocked until both controllers are up.
+	timeout, _ := ctx.Deadline()
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"available"},
 		Refresh:      domainServiceControllerRefreshFunc(ctx, client, id),
-		Delay:        30 * time.Second,
-		PollInterval: 10 * time.Second,
-		Timeout:      1 * time.Hour,
+		Delay:        1 * time.Minute,
+		PollInterval: 1 * time.Minute,
+		Timeout:      time.Until(timeout),
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {
@@ -421,13 +416,14 @@ func resourceActiveDirectoryDomainServiceCreateUpdate(d *schema.ResourceData, me
 			}
 
 			// Wait for the additional replica sets to become fully available
+			timeout, _ = ctx.Deadline()
 			stateConf := &resource.StateChangeConf{
 				Pending:      []string{"pending"},
 				Target:       []string{"available"},
 				Refresh:      domainServiceControllerRefreshFunc(ctx, client, id),
-				Delay:        30 * time.Second,
-				PollInterval: 10 * time.Second,
-				Timeout:      1 * time.Hour,
+				Delay:        1 * time.Minute,
+				PollInterval: 1 * time.Minute,
+				Timeout:      time.Until(timeout),
 			}
 
 			if _, err := stateConf.WaitForState(); err != nil {
@@ -482,10 +478,6 @@ func resourceActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta inter
 
 		d.Set("sku", props.Sku)
 
-		if err := d.Set("ldaps", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
-			return fmt.Errorf("setting `ldaps`: %+v", err)
-		}
-
 		if err := d.Set("notifications", flattenDomainServiceNotifications(props.NotificationSettings)); err != nil {
 			return fmt.Errorf("setting `notifications`: %+v", err)
 		}
@@ -496,6 +488,10 @@ func resourceActiveDirectoryDomainServiceRead(d *schema.ResourceData, meta inter
 
 		if err := d.Set("resource_forest", flattenDomainServiceResourceForest(props.ResourceForestSettings)); err != nil {
 			return fmt.Errorf("setting `resource_forest`: %+v", err)
+		}
+
+		if err := d.Set("secure_ldap", flattenDomainServiceLdaps(props.LdapsSettings)); err != nil {
+			return fmt.Errorf("setting `secure_ldap`: %+v", err)
 		}
 
 		if err := d.Set("security", flattenDomainServiceSecurity(props.DomainSecuritySettings)); err != nil {
@@ -540,15 +536,16 @@ func domainServiceControllerRefreshFunc(ctx context.Context, client *aad.DomainS
 		if err != nil {
 			return nil, "error", err
 		}
-		if resp.ReplicaSets != nil {
-			for _, repl := range *resp.ReplicaSets {
-				if repl.ServiceStatus == nil || !strings.EqualFold(*repl.ServiceStatus, "Running") {
-					return resp, "pending", nil
-				}
-				// when a domain controller is online, its IP address will be returned
-				if repl.DomainControllerIPAddress == nil || len(*repl.DomainControllerIPAddress) < 2 {
-					return resp, "pending", nil
-				}
+		if resp.DomainServiceProperties == nil || resp.DomainServiceProperties.ReplicaSets == nil || len(*resp.DomainServiceProperties.ReplicaSets) == 0 {
+			return nil, "error", fmt.Errorf("API error: `replicaSets` was not returned")
+		}
+		for _, repl := range *resp.DomainServiceProperties.ReplicaSets {
+			if repl.ServiceStatus == nil || !strings.EqualFold(*repl.ServiceStatus, "Running") {
+				return resp, "pending", nil
+			}
+			// when a domain controller is online, its IP address will be returned
+			if repl.DomainControllerIPAddress == nil || len(*repl.DomainControllerIPAddress) < 2 {
+				return resp, "pending", nil
 			}
 		}
 		return resp, "available", nil
@@ -755,10 +752,9 @@ func flattenDomainServiceReplicaSets(input *[]aad.ReplicaSet) (ret []interface{}
 			"domain_controller_ip_addresses": "",
 			"external_access_ip_address":     "",
 			"location":                       "",
-			"replica_set_id":                 "",
+			"id":                             "",
 			"service_status":                 "",
 			"subnet_id":                      "",
-			"vnet_site_id":                   "",
 		}
 		if in.DomainControllerIPAddress != nil {
 			repl["domain_controller_ip_addresses"] = *in.DomainControllerIPAddress
@@ -770,16 +766,13 @@ func flattenDomainServiceReplicaSets(input *[]aad.ReplicaSet) (ret []interface{}
 			repl["location"] = azure.NormalizeLocation(*in.Location)
 		}
 		if in.ReplicaSetID != nil {
-			repl["replica_set_id"] = in.ReplicaSetID
+			repl["id"] = in.ReplicaSetID
 		}
 		if in.ServiceStatus != nil {
 			repl["service_status"] = in.ServiceStatus
 		}
 		if in.SubnetID != nil {
 			repl["subnet_id"] = in.SubnetID
-		}
-		if in.VnetSiteID != nil {
-			repl["vnet_site_id"] = in.VnetSiteID
 		}
 		ret = append(ret, repl)
 	}
