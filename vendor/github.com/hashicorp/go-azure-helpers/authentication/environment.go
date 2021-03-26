@@ -197,6 +197,9 @@ func buildAzureEnvironment(env Environment) (*azure.Environment, error) {
 			KeyVault: fmt.Sprintf("https://%s/", env.Suffixes.KeyVaultDns),
 			Datalake: env.ActiveDirectoryDataLake,
 			Batch:    env.Batch,
+			Synapse:  azure.NotAvailable,
+			OperationalInsights:  azure.NotAvailable,
+			ServiceBus:  azure.NotAvailable,
 		},
 	}
 
