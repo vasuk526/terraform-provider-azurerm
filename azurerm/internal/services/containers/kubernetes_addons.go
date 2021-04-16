@@ -6,9 +6,9 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2021-02-01/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	logAnalyticsValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/loganalytics/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 
 	laparse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/loganalytics/parse"
@@ -42,27 +42,27 @@ var unsupportedAddonsForEnvironment = map[string][]string{
 	},
 }
 
-func schemaKubernetesAddOnProfiles() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaKubernetesAddOnProfiles() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		MaxItems: 1,
 		Optional: true,
 		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"aci_connector_linux": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					MaxItems: 1,
 					Optional: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"enabled": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Required: true,
 							},
 
 							"subnet_name": {
-								Type:         schema.TypeString,
+								Type:         pluginsdk.TypeString,
 								Optional:     true,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
@@ -71,13 +71,13 @@ func schemaKubernetesAddOnProfiles() *schema.Schema {
 				},
 
 				"azure_policy": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					MaxItems: 1,
 					Optional: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"enabled": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Required: true,
 							},
 						},
@@ -85,13 +85,13 @@ func schemaKubernetesAddOnProfiles() *schema.Schema {
 				},
 
 				"kube_dashboard": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					MaxItems: 1,
 					Optional: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"enabled": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Required: true,
 							},
 						},
@@ -99,17 +99,17 @@ func schemaKubernetesAddOnProfiles() *schema.Schema {
 				},
 
 				"http_application_routing": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					MaxItems: 1,
 					Optional: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"enabled": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Required: true,
 							},
 							"http_application_routing_zone_name": {
-								Type:     schema.TypeString,
+								Type:     pluginsdk.TypeString,
 								Computed: true,
 							},
 						},
@@ -117,35 +117,35 @@ func schemaKubernetesAddOnProfiles() *schema.Schema {
 				},
 
 				"oms_agent": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					MaxItems: 1,
 					Optional: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"enabled": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Required: true,
 							},
 							"log_analytics_workspace_id": {
-								Type:         schema.TypeString,
+								Type:         pluginsdk.TypeString,
 								Optional:     true,
 								ValidateFunc: logAnalyticsValidate.LogAnalyticsWorkspaceID,
 							},
 							"oms_agent_identity": {
-								Type:     schema.TypeList,
+								Type:     pluginsdk.TypeList,
 								Computed: true,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
+								Elem: &pluginsdk.Resource{
+									Schema: map[string]*pluginsdk.Schema{
 										"client_id": {
-											Type:     schema.TypeString,
+											Type:     pluginsdk.TypeString,
 											Computed: true,
 										},
 										"object_id": {
-											Type:     schema.TypeString,
+											Type:     pluginsdk.TypeString,
 											Computed: true,
 										},
 										"user_assigned_identity_id": {
-											Type:     schema.TypeString,
+											Type:     pluginsdk.TypeString,
 											Computed: true,
 										},
 									},

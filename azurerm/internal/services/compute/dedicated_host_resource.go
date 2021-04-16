@@ -16,17 +16,17 @@ import (
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceDedicatedHost() *schema.Resource {
-	return &schema.Resource{
+func resourceDedicatedHost() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceDedicatedHostCreate,
 		Read:   resourceDedicatedHostRead,
 		Update: resourceDedicatedHostUpdate,
@@ -37,16 +37,16 @@ func resourceDedicatedHost() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateDedicatedHostName(),
@@ -55,14 +55,14 @@ func resourceDedicatedHost() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"dedicated_host_group_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.DedicatedHostGroupID,
 			},
 
 			"sku_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				ForceNew: true,
 				Required: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -98,19 +98,19 @@ func resourceDedicatedHost() *schema.Resource {
 			},
 
 			"platform_fault_domain": {
-				Type:     schema.TypeInt,
+				Type:     pluginsdk.TypeInt,
 				ForceNew: true,
 				Required: true,
 			},
 
 			"auto_replace_on_failure": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"license_type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(compute.DedicatedHostLicenseTypesNone),
@@ -125,7 +125,7 @@ func resourceDedicatedHost() *schema.Resource {
 	}
 }
 
-func resourceDedicatedHostCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceDedicatedHostCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.DedicatedHostsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -184,7 +184,7 @@ func resourceDedicatedHostCreate(d *schema.ResourceData, meta interface{}) error
 	return resourceDedicatedHostRead(d, meta)
 }
 
-func resourceDedicatedHostRead(d *schema.ResourceData, meta interface{}) error {
+func resourceDedicatedHostRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	groupsClient := meta.(*clients.Client).Compute.DedicatedHostGroupsClient
 	hostsClient := meta.(*clients.Client).Compute.DedicatedHostsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
@@ -238,7 +238,7 @@ func resourceDedicatedHostRead(d *schema.ResourceData, meta interface{}) error {
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceDedicatedHostUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceDedicatedHostUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.DedicatedHostsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -267,7 +267,7 @@ func resourceDedicatedHostUpdate(d *schema.ResourceData, meta interface{}) error
 	return resourceDedicatedHostRead(d, meta)
 }
 
-func resourceDedicatedHostDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceDedicatedHostDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.DedicatedHostsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -296,7 +296,7 @@ func resourceDedicatedHostDelete(d *schema.ResourceData, meta interface{}) error
 		Refresh:                   dedicatedHostDeletedRefreshFunc(ctx, client, id),
 		MinTimeout:                10 * time.Second,
 		ContinuousTargetOccurence: 20,
-		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Timeout:                   d.Timeout(pluginsdk.TimeoutDelete),
 	}
 
 	if _, err = stateConf.WaitForState(); err != nil {

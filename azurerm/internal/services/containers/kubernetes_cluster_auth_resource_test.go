@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 )
@@ -30,10 +29,10 @@ func testAccKubernetesCluster_apiServerAuthorizedIPRanges(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster", "test")
 	r := KubernetesClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.apiServerAuthorizedIPRangesConfig(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("false"),
@@ -68,10 +67,10 @@ func testAccKubernetesCluster_managedClusterIdentity(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster", "test")
 	r := KubernetesClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.managedClusterIdentityConfig(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("identity.0.type").HasValue("SystemAssigned"),
 				check.That(data.ResourceName).Key("kubelet_identity.0.client_id").Exists(),
@@ -88,10 +87,10 @@ func testAccKubernetesCluster_userAssignedIdentity(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster", "test")
 	r := KubernetesClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.userAssignedIdentityConfig(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("identity.0.type").HasValue("UserAssigned"),
 				check.That(data.ResourceName).Key("identity.0.user_assigned_identity_id").Exists(),
@@ -110,10 +109,10 @@ func testAccKubernetesCluster_roleBasedAccessControl(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster", "test")
 	r := KubernetesClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlConfig(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -137,10 +136,10 @@ func testAccKubernetesCluster_roleBasedAccessControlAAD(t *testing.T) {
 	clientData := data.Client()
 	auth := clientData.Default
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlAADConfig(data, auth.ClientID, auth.ClientSecret, ""),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -160,7 +159,7 @@ func testAccKubernetesCluster_roleBasedAccessControlAAD(t *testing.T) {
 			// should be no changes since the default for Tenant ID comes from the Provider block
 			Config:   r.roleBasedAccessControlAADConfig(data, auth.ClientID, auth.ClientSecret, clientData.TenantID),
 			PlanOnly: true,
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -178,10 +177,10 @@ func testAccKubernetesCluster_roleBasedAccessControlAADUpdateToManaged(t *testin
 	clientData := data.Client()
 	auth := clientData.Default
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlAADConfig(data, auth.ClientID, auth.ClientSecret, ""),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -199,7 +198,7 @@ func testAccKubernetesCluster_roleBasedAccessControlAADUpdateToManaged(t *testin
 		),
 		{
 			Config: r.roleBasedAccessControlAADManagedConfig(data, ""),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -226,10 +225,10 @@ func testAccKubernetesCluster_roleBasedAccessControlAADManaged(t *testing.T) {
 	r := KubernetesClusterResource{}
 	clientData := data.Client()
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlAADManagedConfig(data, ""),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -247,7 +246,7 @@ func testAccKubernetesCluster_roleBasedAccessControlAADManaged(t *testing.T) {
 			// should be no changes since the default for Tenant ID comes from the Provider block
 			Config:   r.roleBasedAccessControlAADManagedConfig(data, clientData.TenantID),
 			PlanOnly: true,
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -267,10 +266,10 @@ func testAccKubernetesCluster_roleBasedAccessControlAADManagedChange(t *testing.
 	r := KubernetesClusterResource{}
 	clientData := data.Client()
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlAADManagedConfig(data, ""),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -287,7 +286,7 @@ func testAccKubernetesCluster_roleBasedAccessControlAADManagedChange(t *testing.
 		),
 		{
 			Config: r.roleBasedAccessControlAADManagedConfigScale(data, clientData.TenantID),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("default_node_pool.0.node_count").HasValue("2"),
 			),
@@ -308,10 +307,10 @@ func testAccKubernetesCluster_servicePrincipal(t *testing.T) {
 	r := KubernetesClusterResource{}
 	clientData := data.Client()
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.servicePrincipalConfig(data, clientData.Default.ClientID, clientData.Default.ClientSecret),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("identity.%").HasValue("0"),
 			),
@@ -319,7 +318,7 @@ func testAccKubernetesCluster_servicePrincipal(t *testing.T) {
 		data.ImportStep("service_principal.0.client_secret"),
 		{
 			Config: r.servicePrincipalConfig(data, clientData.Alternate.ClientID, clientData.Alternate.ClientSecret),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("identity.%").HasValue("0"),
 			),
@@ -341,10 +340,10 @@ func testAccKubernetesCluster_updateRoleBaseAccessControlAAD(t *testing.T) {
 	auth := clientData.Default
 	altAlt := clientData.Alternate
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.roleBasedAccessControlAADConfig(data, auth.ClientID, auth.ClientSecret, clientData.TenantID),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),
@@ -362,7 +361,7 @@ func testAccKubernetesCluster_updateRoleBaseAccessControlAAD(t *testing.T) {
 		),
 		{
 			Config: r.updateRoleBasedAccessControlAADConfig(data, altAlt.ClientID, altAlt.ClientSecret, clientData.TenantID),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("role_based_access_control.#").HasValue("1"),
 				check.That(data.ResourceName).Key("role_based_access_control.0.enabled").HasValue("true"),

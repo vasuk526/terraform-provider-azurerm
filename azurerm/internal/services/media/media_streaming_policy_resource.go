@@ -7,27 +7,27 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/mediaservices/mgmt/2020-05-01/media"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/media/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceMediaStreamingPolicy() *schema.Resource {
-	return &schema.Resource{
+func resourceMediaStreamingPolicy() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceMediaStreamingPolicyCreate,
 		Read:   resourceMediaStreamingPolicyRead,
 		Delete: resourceMediaStreamingPolicyDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
@@ -35,9 +35,9 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 			return err
 		}),
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringMatch(
@@ -49,7 +49,7 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"media_services_account_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateMediaServicesAccountName,
@@ -58,37 +58,37 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 			"no_encryption_enabled_protocols": enabledProtocolsSchema(),
 
 			"common_encryption_cenc": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"enabled_protocols": enabledProtocolsSchema(),
 
 						"drm_widevine_custom_license_acquisition_url_template": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.IsURLWithHTTPS,
 						},
 
 						"drm_playready": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							ForceNew: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"custom_license_acquisition_url_template": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.IsURLWithHTTPS,
 									},
 
 									"custom_attributes": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
@@ -103,30 +103,30 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 			},
 
 			"common_encryption_cbcs": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"enabled_protocols": enabledProtocolsSchema(),
 
 						"drm_fairplay": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							ForceNew: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"custom_license_acquisition_url_template": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.IsURLWithHTTPS,
 									},
 
 									"allow_persistent_license": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										ForceNew: true,
 									},
@@ -140,7 +140,7 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 			},
 
 			"default_content_key_policy_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -149,7 +149,7 @@ func resourceMediaStreamingPolicy() *schema.Resource {
 	}
 }
 
-func resourceMediaStreamingPolicyCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaStreamingPolicyCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.StreamingPoliciesClient
 	subscriptionID := meta.(*clients.Client).Account.SubscriptionId
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
@@ -198,7 +198,7 @@ func resourceMediaStreamingPolicyCreate(d *schema.ResourceData, meta interface{}
 	return resourceMediaStreamingPolicyRead(d, meta)
 }
 
-func resourceMediaStreamingPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaStreamingPolicyRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.StreamingPoliciesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -245,7 +245,7 @@ func resourceMediaStreamingPolicyRead(d *schema.ResourceData, meta interface{}) 
 	return nil
 }
 
-func resourceMediaStreamingPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaStreamingPolicyDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.StreamingPoliciesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -262,34 +262,34 @@ func resourceMediaStreamingPolicyDelete(d *schema.ResourceData, meta interface{}
 	return nil
 }
 
-func enabledProtocolsSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func enabledProtocolsSchema() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		ForceNew: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"dash": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					ForceNew: true,
 				},
 
 				"download": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					ForceNew: true,
 				},
 
 				"hls": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					ForceNew: true,
 				},
 
 				"smooth_streaming": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					ForceNew: true,
 				},
@@ -298,23 +298,23 @@ func enabledProtocolsSchema() *schema.Schema {
 	}
 }
 
-func defaultContentKeySchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func defaultContentKeySchema() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		ForceNew: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"label": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					ForceNew:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"policy_name": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					ForceNew:     true,
 					ValidateFunc: validation.StringIsNotEmpty,

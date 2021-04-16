@@ -3,15 +3,15 @@ package migration
 import (
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/loganalytics/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-func WorkspaceV1ToV2() schema.StateUpgrader {
+func WorkspaceV1ToV2() pluginsdk.StateUpgrader {
 	// V1 to V2 is the same as v0 to v1 - to workaround a historical issue where `resource_group` was
 	// used in place of `resource_group_name` - ergo using the same schema is fine.
-	return schema.StateUpgrader{
+	return pluginsdk.StateUpgrader{
 		Version: 1,
 		Type:    workspaceV0V1Schema().CoreConfigSchema().ImpliedType(),
 		Upgrade: workspaceUpgradeV1ToV2,

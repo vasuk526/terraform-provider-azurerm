@@ -9,18 +9,18 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/authorization/azuresdkhacks"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/authorization/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceArmRoleDefinition() *schema.Resource {
-	return &schema.Resource{
+func resourceArmRoleDefinition() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceArmRoleDefinitionCreate,
 		Read:   resourceArmRoleDefinitionRead,
 		Update: resourceArmRoleDefinitionUpdate,
@@ -31,16 +31,16 @@ func resourceArmRoleDefinition() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
 		SchemaVersion: 1,
 
-		StateUpgraders: []schema.StateUpgrader{
+		StateUpgraders: []pluginsdk.StateUpgrader{
 			{
 				Type:    resourceArmRoleDefinitionV0().CoreConfigSchema().ImpliedType(),
 				Upgrade: resourceArmRoleDefinitionStateUpgradeV0,
@@ -48,87 +48,87 @@ func resourceArmRoleDefinition() *schema.Resource {
 			},
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"role_definition_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 			},
 
 			"scope": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"permissions": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"actions": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 						"not_actions": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 						"data_actions": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 						"not_data_actions": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 					},
 				},
 			},
 
 			"assignable_scopes": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 
 			"role_definition_resource_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 		},
 	}
 }
 
-func resourceArmRoleDefinitionCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceArmRoleDefinitionCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Authorization.RoleDefinitionsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -196,7 +196,7 @@ func resourceArmRoleDefinitionCreate(d *schema.ResourceData, meta interface{}) e
 			Refresh:                   roleDefinitionUpdateStateRefreshFunc(ctx, client, id.ResourceID),
 			MinTimeout:                10 * time.Second,
 			ContinuousTargetOccurence: 12,
-			Timeout:                   d.Timeout(schema.TimeoutUpdate),
+			Timeout:                   d.Timeout(pluginsdk.TimeoutUpdate),
 		}
 
 		if _, err := stateConf.WaitForState(); err != nil {
@@ -216,7 +216,7 @@ func resourceArmRoleDefinitionCreate(d *schema.ResourceData, meta interface{}) e
 	return resourceArmRoleDefinitionRead(d, meta)
 }
 
-func resourceArmRoleDefinitionUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceArmRoleDefinitionUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	sdkClient := meta.(*clients.Client).Authorization.RoleDefinitionsClient
 	client := azuresdkhacks.NewRoleDefinitionsWorkaroundClient(sdkClient)
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
@@ -269,7 +269,7 @@ func resourceArmRoleDefinitionUpdate(d *schema.ResourceData, meta interface{}) e
 		Pending:                   []string{"Pending"},
 		Target:                    []string{"Updated"},
 		Refresh:                   roleDefinitionEventualConsistencyUpdate(ctx, client, *roleDefinitionId, *updatedOn),
-		Timeout:                   d.Timeout(schema.TimeoutUpdate),
+		Timeout:                   d.Timeout(pluginsdk.TimeoutUpdate),
 	}
 	if _, err := stateConf.WaitForState(); err != nil {
 		return fmt.Errorf("waiting for Role Definition %q (Scope %q) to settle down: %+v", roleDefinitionId.RoleID, roleDefinitionId.Scope, err)
@@ -278,7 +278,7 @@ func resourceArmRoleDefinitionUpdate(d *schema.ResourceData, meta interface{}) e
 	return resourceArmRoleDefinitionRead(d, meta)
 }
 
-func resourceArmRoleDefinitionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceArmRoleDefinitionRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Authorization.RoleDefinitionsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -321,7 +321,7 @@ func resourceArmRoleDefinitionRead(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func resourceArmRoleDefinitionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceArmRoleDefinitionDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Authorization.RoleDefinitionsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -346,7 +346,7 @@ func resourceArmRoleDefinitionDelete(d *schema.ResourceData, meta interface{}) e
 		Refresh:                   roleDefinitionDeleteStateRefreshFunc(ctx, client, id.ResourceID),
 		MinTimeout:                10 * time.Second,
 		ContinuousTargetOccurence: 6,
-		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Timeout:                   d.Timeout(pluginsdk.TimeoutDelete),
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {
@@ -427,7 +427,7 @@ func expandRoleDefinitionPermissions(input []interface{}) []authorization.Permis
 		permission.Actions = &actionsOutput
 
 		dataActionsOutput := make([]string, 0)
-		dataActions := raw["data_actions"].(*schema.Set)
+		dataActions := raw["data_actions"].(*pluginsdk.Set)
 		for _, a := range dataActions.List() {
 			if a == nil {
 				continue
@@ -447,7 +447,7 @@ func expandRoleDefinitionPermissions(input []interface{}) []authorization.Permis
 		permission.NotActions = &notActionsOutput
 
 		notDataActionsOutput := make([]string, 0)
-		notDataActions := raw["not_data_actions"].(*schema.Set)
+		notDataActions := raw["not_data_actions"].(*pluginsdk.Set)
 		for _, a := range notDataActions.List() {
 			if a == nil {
 				continue
@@ -462,7 +462,7 @@ func expandRoleDefinitionPermissions(input []interface{}) []authorization.Permis
 	return output
 }
 
-func expandRoleDefinitionAssignableScopes(d *schema.ResourceData) []string {
+func expandRoleDefinitionAssignableScopes(d *pluginsdk.ResourceData) []string {
 	scopes := make([]string, 0)
 
 	assignableScopes := d.Get("assignable_scopes").([]interface{})
@@ -487,9 +487,9 @@ func flattenRoleDefinitionPermissions(input *[]authorization.Permission) []inter
 	for _, permission := range *input {
 		permissions = append(permissions, map[string]interface{}{
 			"actions":          utils.FlattenStringSlice(permission.Actions),
-			"data_actions":     schema.NewSet(schema.HashString, utils.FlattenStringSlice(permission.DataActions)),
+			"data_actions":     pluginsdk.NewSet(pluginsdk.HashString, utils.FlattenStringSlice(permission.DataActions)),
 			"not_actions":      utils.FlattenStringSlice(permission.NotActions),
-			"not_data_actions": schema.NewSet(schema.HashString, utils.FlattenStringSlice(permission.NotDataActions)),
+			"not_data_actions": pluginsdk.NewSet(pluginsdk.HashString, utils.FlattenStringSlice(permission.NotDataActions)),
 		})
 	}
 

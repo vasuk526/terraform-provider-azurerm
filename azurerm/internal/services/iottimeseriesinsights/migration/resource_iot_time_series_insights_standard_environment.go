@@ -4,48 +4,48 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-func TimeSeriesInsightsAccessPolicyV0() schema.StateUpgrader {
-	return schema.StateUpgrader{
+func TimeSeriesInsightsAccessPolicyV0() pluginsdk.StateUpgrader {
+	return pluginsdk.StateUpgrader{
 		Type:    timeSeriesInsightsAccessPolicyV0StateMigration().CoreConfigSchema().ImpliedType(),
 		Upgrade: timeSeriesInsightsAccessPolicyV0StateUpgradeV0ToV1,
 		Version: 0,
 	}
 }
 
-func timeSeriesInsightsAccessPolicyV0StateMigration() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
+func timeSeriesInsightsAccessPolicyV0StateMigration() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"time_series_insights_environment_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"principal_object_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"roles": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 		},

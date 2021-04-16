@@ -9,41 +9,41 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/mgmt/2020-11-01-preview/containerregistry"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceContainerRegistry() *schema.Resource {
-	return &schema.Resource{
+func resourceContainerRegistry() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceContainerRegistryCreate,
 		Read:   resourceContainerRegistryRead,
 		Update: resourceContainerRegistryUpdate,
 		Delete: resourceContainerRegistryDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 		MigrateState:  ResourceContainerRegistryMigrateState,
 		SchemaVersion: 2,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateContainerRegistryName,
@@ -54,7 +54,7 @@ func resourceContainerRegistry() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"sku": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				Default:          string(containerregistry.Classic),
 				DiffSuppressFunc: suppress.CaseDifference,
@@ -67,60 +67,60 @@ func resourceContainerRegistry() *schema.Resource {
 			},
 
 			"admin_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
 			"georeplication_locations": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				MinItems: 1,
 				Optional: true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type:         pluginsdk.TypeString,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 				Set: location.HashCode,
 			},
 
 			"public_network_access_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"storage_account_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"login_server": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"admin_username": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"admin_password": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"network_rule_set": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				Optional:   true,
 				Computed:   true,
 				MaxItems:   1,
-				ConfigMode: schema.SchemaConfigModeAttr, // make sure we can set this to an empty array for Premium -> Basic
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				ConfigMode: pluginsdk.SchemaConfigModeAttr, // make sure we can set this to an empty array for Premium -> Basic
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"default_action": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Optional: true,
 							Default:  containerregistry.DefaultActionAllow,
 							ValidateFunc: validation.StringInSlice([]string{
@@ -130,20 +130,20 @@ func resourceContainerRegistry() *schema.Resource {
 						},
 
 						"ip_rule": {
-							Type:       schema.TypeSet,
+							Type:       pluginsdk.TypeSet,
 							Optional:   true,
-							ConfigMode: schema.SchemaConfigModeAttr,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							ConfigMode: pluginsdk.SchemaConfigModeAttr,
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"action": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(containerregistry.Allow),
 										}, false),
 									},
 									"ip_range": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validate.CIDR,
 									},
@@ -152,20 +152,20 @@ func resourceContainerRegistry() *schema.Resource {
 						},
 
 						"virtual_network": {
-							Type:       schema.TypeSet,
+							Type:       pluginsdk.TypeSet,
 							Optional:   true,
-							ConfigMode: schema.SchemaConfigModeAttr,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							ConfigMode: pluginsdk.SchemaConfigModeAttr,
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"action": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(containerregistry.Allow),
 										}, false),
 									},
 									"subnet_id": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: azure.ValidateResourceID,
 									},
@@ -177,26 +177,26 @@ func resourceContainerRegistry() *schema.Resource {
 			},
 
 			"quarantine_policy_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 			},
 
 			"retention_policy": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				MaxItems:   1,
 				Optional:   true,
 				Computed:   true,
-				ConfigMode: schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				ConfigMode: pluginsdk.SchemaConfigModeAttr,
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"days": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Optional: true,
 							Default:  7,
 						},
 
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
@@ -205,15 +205,15 @@ func resourceContainerRegistry() *schema.Resource {
 			},
 
 			"trust_policy": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				MaxItems:   1,
 				Optional:   true,
 				Computed:   true,
-				ConfigMode: schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				ConfigMode: pluginsdk.SchemaConfigModeAttr,
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
@@ -224,9 +224,9 @@ func resourceContainerRegistry() *schema.Resource {
 			"tags": tags.Schema(),
 		},
 
-		CustomizeDiff: func(d *schema.ResourceDiff, v interface{}) error {
+		CustomizeDiff: func(d *pluginsdk.ResourceDiff, v interface{}) error {
 			sku := d.Get("sku").(string)
-			geoReplicationLocations := d.Get("georeplication_locations").(*schema.Set)
+			geoReplicationLocations := d.Get("georeplication_locations").(*pluginsdk.Set)
 			// if locations have been specified for geo-replication then, the SKU has to be Premium
 			if geoReplicationLocations != nil && geoReplicationLocations.Len() > 0 && !strings.EqualFold(sku, string(containerregistry.Premium)) {
 				return fmt.Errorf("ACR geo-replication can only be applied when using the Premium Sku.")
@@ -252,7 +252,7 @@ func resourceContainerRegistry() *schema.Resource {
 	}
 }
 
-func resourceContainerRegistryCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.RegistriesClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -291,7 +291,7 @@ func resourceContainerRegistryCreate(d *schema.ResourceData, meta interface{}) e
 	sku := d.Get("sku").(string)
 	adminUserEnabled := d.Get("admin_enabled").(bool)
 	t := d.Get("tags").(map[string]interface{})
-	geoReplicationLocations := d.Get("georeplication_locations").(*schema.Set)
+	geoReplicationLocations := d.Get("georeplication_locations").(*pluginsdk.Set)
 
 	networkRuleSet := expandNetworkRuleSet(d.Get("network_rule_set").([]interface{}))
 	if networkRuleSet != nil && !strings.EqualFold(sku, string(containerregistry.Premium)) {
@@ -375,7 +375,7 @@ func resourceContainerRegistryCreate(d *schema.ResourceData, meta interface{}) e
 	return resourceContainerRegistryRead(d, meta)
 }
 
-func resourceContainerRegistryUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.RegistriesClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -395,8 +395,8 @@ func resourceContainerRegistryUpdate(d *schema.ResourceData, meta interface{}) e
 
 	old, new := d.GetChange("georeplication_locations")
 	hasGeoReplicationChanges := d.HasChange("georeplication_locations")
-	oldGeoReplicationLocations := old.(*schema.Set)
-	newGeoReplicationLocations := new.(*schema.Set)
+	oldGeoReplicationLocations := old.(*pluginsdk.Set)
+	newGeoReplicationLocations := new.(*pluginsdk.Set)
 
 	// handle upgrade to Premium SKU first
 	if skuChange && isPremiumSku {
@@ -483,7 +483,7 @@ func resourceContainerRegistryUpdate(d *schema.ResourceData, meta interface{}) e
 	return resourceContainerRegistryRead(d, meta)
 }
 
-func applyContainerRegistrySku(d *schema.ResourceData, meta interface{}, sku string, resourceGroup string, name string) error {
+func applyContainerRegistrySku(d *pluginsdk.ResourceData, meta interface{}, sku string, resourceGroup string, name string) error {
 	client := meta.(*clients.Client).Containers.RegistriesClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -507,7 +507,7 @@ func applyContainerRegistrySku(d *schema.ResourceData, meta interface{}, sku str
 	return nil
 }
 
-func applyGeoReplicationLocations(d *schema.ResourceData, meta interface{}, resourceGroup string, name string, oldGeoReplicationLocations []interface{}, newGeoReplicationLocations []interface{}) error {
+func applyGeoReplicationLocations(d *pluginsdk.ResourceData, meta interface{}, resourceGroup string, name string, oldGeoReplicationLocations []interface{}, newGeoReplicationLocations []interface{}) error {
 	replicationClient := meta.(*clients.Client).Containers.ReplicationsClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -577,7 +577,7 @@ func applyGeoReplicationLocations(d *schema.ResourceData, meta interface{}, reso
 	return nil
 }
 
-func resourceContainerRegistryRead(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.RegistriesClient
 	replicationClient := meta.(*clients.Client).Containers.ReplicationsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
@@ -662,7 +662,7 @@ func resourceContainerRegistryRead(d *schema.ResourceData, meta interface{}) err
 
 	// if there is more than one location (the main one and the replicas)
 	if replicationValues != nil || len(replicationValues) > 1 {
-		georeplication_locations := &schema.Set{F: schema.HashString}
+		georeplication_locations := &pluginsdk.Set{F: pluginsdk.HashString}
 
 		for _, value := range replicationValues {
 			if value.Location != nil {
@@ -679,7 +679,7 @@ func resourceContainerRegistryRead(d *schema.ResourceData, meta interface{}) err
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceContainerRegistryDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.RegistriesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -734,7 +734,7 @@ func expandNetworkRuleSet(profiles []interface{}) *containerregistry.NetworkRule
 
 	profile := profiles[0].(map[string]interface{})
 
-	ipRuleConfigs := profile["ip_rule"].(*schema.Set).List()
+	ipRuleConfigs := profile["ip_rule"].(*pluginsdk.Set).List()
 	ipRules := make([]containerregistry.IPRule, 0)
 	for _, ipRuleInterface := range ipRuleConfigs {
 		config := ipRuleInterface.(map[string]interface{})
@@ -745,7 +745,7 @@ func expandNetworkRuleSet(profiles []interface{}) *containerregistry.NetworkRule
 		ipRules = append(ipRules, newIpRule)
 	}
 
-	networkRuleConfigs := profile["virtual_network"].(*schema.Set).List()
+	networkRuleConfigs := profile["virtual_network"].(*pluginsdk.Set).List()
 	virtualNetworkRules := make([]containerregistry.VirtualNetworkRule, 0)
 	for _, networkRuleInterface := range networkRuleConfigs {
 		config := networkRuleInterface.(map[string]interface{})

@@ -7,23 +7,23 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/blueprint/mgmt/2018-11-01-preview/blueprint"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	msiparse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func ManagedIdentitySchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func ManagedIdentitySchema() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"type": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						// ManagedServiceIdentityTypeNone is not valid; a valid and privileged Identity is required for the service to apply the changes.
@@ -38,22 +38,22 @@ func ManagedIdentitySchema() *schema.Schema {
 
 				"identity_ids": {
 					// The API only seems to care about the "key" portion of this struct, which is the ResourceID of the Identity
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Required: true,
 					MinItems: 1,
-					Elem: &schema.Schema{
-						Type:         schema.TypeString,
+					Elem: &pluginsdk.Schema{
+						Type:         pluginsdk.TypeString,
 						ValidateFunc: validate.UserAssignedIdentityID,
 					},
 				},
 
 				"principal_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"tenant_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 			},

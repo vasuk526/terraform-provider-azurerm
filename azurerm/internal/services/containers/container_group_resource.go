@@ -11,8 +11,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/containerinstance/mgmt/2019-12-01/containerinstance"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -21,31 +19,33 @@ import (
 	msiparse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
 	msivalidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceContainerGroup() *schema.Resource {
-	return &schema.Resource{
+func resourceContainerGroup() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceContainerGroupCreate,
 		Read:   resourceContainerGroupRead,
 		Delete: resourceContainerGroupDelete,
 		Update: resourceContainerGroupUpdate,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -56,7 +56,7 @@ func resourceContainerGroup() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"ip_address_type": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				Default:          "Public",
 				ForceNew:         true,
@@ -68,7 +68,7 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"network_profile_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -81,7 +81,7 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"os_type": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: suppress.CaseDifference,
@@ -92,27 +92,27 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"image_registry_credential": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"server": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"username": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"password": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							Sensitive:    true,
 							ForceNew:     true,
@@ -123,14 +123,14 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								"SystemAssigned",
@@ -139,16 +139,16 @@ func resourceContainerGroup() *schema.Resource {
 							}, false),
 						},
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"identity_ids": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MinItems: 1,
 							ForceNew: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: msivalidate.UserAssignedIdentityID,
 							},
 						},
@@ -159,7 +159,7 @@ func resourceContainerGroup() *schema.Resource {
 			"tags": tags.Schema(),
 
 			"restart_policy": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				Default:          string(containerinstance.Always),
@@ -172,52 +172,52 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"dns_name_label": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"container": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Required: true,
 				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"image": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"cpu": {
-							Type:     schema.TypeFloat,
+							Type:     pluginsdk.TypeFloat,
 							Required: true,
 							ForceNew: true,
 						},
 
 						"memory": {
-							Type:     schema.TypeFloat,
+							Type:     pluginsdk.TypeFloat,
 							Required: true,
 							ForceNew: true,
 						},
 
 						"gpu": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
 							ForceNew: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"count": {
-										Type:     schema.TypeInt,
+										Type:     pluginsdk.TypeInt,
 										Optional: true,
 										ForceNew: true,
 										ValidateFunc: validation.IntInSlice([]int{
@@ -228,7 +228,7 @@ func resourceContainerGroup() *schema.Resource {
 									},
 
 									"sku": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ForceNew: true,
 										ValidateFunc: validation.StringInSlice([]string{
@@ -242,21 +242,21 @@ func resourceContainerGroup() *schema.Resource {
 						},
 
 						"ports": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
 							ForceNew: true,
 							Set:      resourceContainerGroupPortsHash,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"port": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validate.PortNumber,
 									},
 
 									"protocol": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ForceNew: true,
 										Default:  string(containerinstance.TCP),
@@ -270,78 +270,78 @@ func resourceContainerGroup() *schema.Resource {
 						},
 
 						"environment_variables": {
-							Type:     schema.TypeMap,
+							Type:     pluginsdk.TypeMap,
 							ForceNew: true,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 
 						"secure_environment_variables": {
-							Type:      schema.TypeMap,
+							Type:      pluginsdk.TypeMap,
 							Optional:  true,
 							ForceNew:  true,
 							Sensitive: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 
 						"commands": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							Computed: true,
 							ForceNew: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 
 						"volume": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							ForceNew: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"name": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"mount_path": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"read_only": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										ForceNew: true,
 										Default:  false,
 									},
 
 									"share_name": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"storage_account_name": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"storage_account_key": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										Sensitive:    true,
 										ForceNew:     true,
@@ -349,33 +349,33 @@ func resourceContainerGroup() *schema.Resource {
 									},
 
 									"empty_dir": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										ForceNew: true,
 										Default:  false,
 									},
 
 									"git_repo": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										ForceNew: true,
 										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"url": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Required: true,
 													ForceNew: true,
 												},
 
 												"directory": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Optional: true,
 													ForceNew: true,
 												},
 
 												"revision": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Optional: true,
 													ForceNew: true,
 												},
@@ -384,12 +384,12 @@ func resourceContainerGroup() *schema.Resource {
 									},
 
 									"secret": {
-										Type:      schema.TypeMap,
+										Type:      pluginsdk.TypeMap,
 										ForceNew:  true,
 										Optional:  true,
 										Sensitive: true,
-										Elem: &schema.Schema{
-											Type: schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type: pluginsdk.TypeString,
 										},
 									},
 								},
@@ -404,28 +404,28 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"diagnostics": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"log_analytics": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Required: true,
 							ForceNew: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"workspace_id": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ForceNew:     true,
 										ValidateFunc: validation.IsUUID,
 									},
 
 									"workspace_key": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										Sensitive:    true,
 										ForceNew:     true,
@@ -433,7 +433,7 @@ func resourceContainerGroup() *schema.Resource {
 									},
 
 									"log_type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ForceNew: true,
 										ValidateFunc: validation.StringInSlice([]string{
@@ -443,11 +443,11 @@ func resourceContainerGroup() *schema.Resource {
 									},
 
 									"metadata": {
-										Type:     schema.TypeMap,
+										Type:     pluginsdk.TypeMap,
 										Optional: true,
 										ForceNew: true,
-										Elem: &schema.Schema{
-											Type: schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type: pluginsdk.TypeString,
 										},
 									},
 								},
@@ -458,12 +458,12 @@ func resourceContainerGroup() *schema.Resource {
 			},
 
 			"ip_address": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"fqdn": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
@@ -471,32 +471,32 @@ func resourceContainerGroup() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				ForceNew: true,
-				Type:     schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Type:     pluginsdk.TypeList,
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"nameservers": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Required: true,
 							ForceNew: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 						"search_domains": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
 							ForceNew: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 						"options": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
 							ForceNew: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
@@ -507,7 +507,7 @@ func resourceContainerGroup() *schema.Resource {
 	}
 }
 
-func resourceContainerGroupCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerGroupCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.GroupsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -598,7 +598,7 @@ func resourceContainerGroupCreate(d *schema.ResourceData, meta interface{}) erro
 	return resourceContainerGroupRead(d, meta)
 }
 
-func resourceContainerGroupUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerGroupUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.GroupsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -621,7 +621,7 @@ func resourceContainerGroupUpdate(d *schema.ResourceData, meta interface{}) erro
 	return resourceContainerGroupRead(d, meta)
 }
 
-func resourceContainerGroupRead(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerGroupRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.GroupsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -687,7 +687,7 @@ func resourceContainerGroupRead(d *schema.ResourceData, meta interface{}) error 
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceContainerGroupDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerGroupDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.GroupsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -745,7 +745,7 @@ func resourceContainerGroupDelete(d *schema.ResourceData, meta interface{}) erro
 			Refresh:                   containerGroupEnsureDetachedFromNetworkProfileRefreshFunc(ctx, networkProfileClient, networkProfileResourceGroup, networkProfileName, resourceGroup, name),
 			MinTimeout:                15 * time.Second,
 			ContinuousTargetOccurence: 5,
-			Timeout:                   d.Timeout(schema.TimeoutDelete),
+			Timeout:                   d.Timeout(pluginsdk.TimeoutDelete),
 		}
 
 		if _, err := stateConf.WaitForState(); err != nil {
@@ -803,7 +803,7 @@ func containerGroupEnsureDetachedFromNetworkProfileRefreshFunc(ctx context.Conte
 	}
 }
 
-func expandContainerGroupContainers(d *schema.ResourceData) (*[]containerinstance.Container, *[]containerinstance.Port, *[]containerinstance.Volume, error) {
+func expandContainerGroupContainers(d *pluginsdk.ResourceData) (*[]containerinstance.Container, *[]containerinstance.Port, *[]containerinstance.Volume, error) {
 	containersConfig := d.Get("container").([]interface{})
 	containers := make([]containerinstance.Container, 0)
 	containerGroupPorts := make([]containerinstance.Port, 0)
@@ -845,7 +845,7 @@ func expandContainerGroupContainers(d *schema.ResourceData) (*[]containerinstanc
 			}
 		}
 
-		if v, ok := data["ports"].(*schema.Set); ok && len(v.List()) > 0 {
+		if v, ok := data["ports"].(*pluginsdk.Set); ok && len(v.List()) > 0 {
 			var ports []containerinstance.ContainerPort
 			for _, v := range v.List() {
 				portObj := v.(map[string]interface{})
@@ -946,7 +946,7 @@ func expandContainerEnvironmentVariables(input interface{}, secure bool) *[]cont
 	return &output
 }
 
-func expandContainerGroupIdentity(d *schema.ResourceData) *containerinstance.ContainerGroupIdentity {
+func expandContainerGroupIdentity(d *pluginsdk.ResourceData) *containerinstance.ContainerGroupIdentity {
 	v := d.Get("identity")
 	identities := v.([]interface{})
 	if len(identities) == 0 {
@@ -971,7 +971,7 @@ func expandContainerGroupIdentity(d *schema.ResourceData) *containerinstance.Con
 	return &cgIdentity
 }
 
-func expandContainerImageRegistryCredentials(d *schema.ResourceData) *[]containerinstance.ImageRegistryCredential {
+func expandContainerImageRegistryCredentials(d *pluginsdk.ResourceData) *[]containerinstance.ImageRegistryCredential {
 	credsRaw := d.Get("image_registry_credential").([]interface{})
 	if len(credsRaw) == 0 {
 		return nil
@@ -1188,7 +1188,7 @@ func flattenContainerGroupIdentity(identity *containerinstance.ContainerGroupIde
 	return []interface{}{result}, nil
 }
 
-func flattenContainerImageRegistryCredentials(d *schema.ResourceData, input *[]containerinstance.ImageRegistryCredential) []interface{} {
+func flattenContainerImageRegistryCredentials(d *pluginsdk.ResourceData, input *[]containerinstance.ImageRegistryCredential) []interface{} {
 	if input == nil {
 		return nil
 	}
@@ -1219,7 +1219,7 @@ func flattenContainerImageRegistryCredentials(d *schema.ResourceData, input *[]c
 	return output
 }
 
-func flattenContainerGroupContainers(d *schema.ResourceData, containers *[]containerinstance.Container, containerGroupVolumes *[]containerinstance.Volume) []interface{} {
+func flattenContainerGroupContainers(d *pluginsdk.ResourceData, containers *[]containerinstance.Container, containerGroupVolumes *[]containerinstance.Volume) []interface{} {
 	// map old container names to index so we can look up things up
 	nameIndexMap := map[string]int{}
 	for i, c := range d.Get("container").([]interface{}) {
@@ -1274,7 +1274,7 @@ func flattenContainerGroupContainers(d *schema.ResourceData, containers *[]conta
 				port["protocol"] = string(p.Protocol)
 				ports = append(ports, port)
 			}
-			containerConfig["ports"] = schema.NewSet(resourceContainerGroupPortsHash, ports)
+			containerConfig["ports"] = pluginsdk.NewSet(resourceContainerGroupPortsHash, ports)
 		}
 
 		if container.EnvironmentVariables != nil {
@@ -1323,7 +1323,7 @@ func flattenContainerGroupContainers(d *schema.ResourceData, containers *[]conta
 	return containerCfg
 }
 
-func flattenContainerEnvironmentVariables(input *[]containerinstance.EnvironmentVariable, isSecure bool, d *schema.ResourceData, oldContainerIndex int) map[string]interface{} {
+func flattenContainerEnvironmentVariables(input *[]containerinstance.EnvironmentVariable, isSecure bool, d *pluginsdk.ResourceData, oldContainerIndex int) map[string]interface{} {
 	output := make(map[string]interface{})
 
 	if input == nil {
@@ -1529,7 +1529,7 @@ func expandContainerGroupDiagnostics(input []interface{}) *containerinstance.Con
 	return &containerinstance.ContainerGroupDiagnostics{LogAnalytics: &logAnalytics}
 }
 
-func flattenContainerGroupDiagnostics(d *schema.ResourceData, input *containerinstance.ContainerGroupDiagnostics) []interface{} {
+func flattenContainerGroupDiagnostics(d *pluginsdk.ResourceData, input *containerinstance.ContainerGroupDiagnostics) []interface{} {
 	if input == nil {
 		return []interface{}{}
 	}
@@ -1582,7 +1582,7 @@ func resourceContainerGroupPortsHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", m["protocol"].(string)))
 	}
 
-	return schema.HashString(buf.String())
+	return pluginsdk.HashString(buf.String())
 }
 
 func flattenContainerGroupDnsConfig(input *containerinstance.DNSConfiguration) []interface{} {
@@ -1626,11 +1626,11 @@ func expandContainerGroupDnsConfig(input interface{}) *containerinstance.DNSConf
 			nameservers = append(nameservers, v.(string))
 		}
 		options := []string{}
-		for _, v := range config["options"].(*schema.Set).List() {
+		for _, v := range config["options"].(*pluginsdk.Set).List() {
 			options = append(options, v.(string))
 		}
 		searchDomains := []string{}
-		for _, v := range config["search_domains"].(*schema.Set).List() {
+		for _, v := range config["search_domains"].(*pluginsdk.Set).List() {
 			searchDomains = append(searchDomains, v.(string))
 		}
 

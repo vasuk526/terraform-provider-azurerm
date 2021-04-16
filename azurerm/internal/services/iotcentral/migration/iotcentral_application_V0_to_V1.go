@@ -4,27 +4,27 @@ import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/services/iotcentral/mgmt/2018-09-01/iotcentral"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/iotcentral/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/iotcentral/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 )
 
-func IoTCentralApplicationV0ToV1() schema.StateUpgrader {
-	return schema.StateUpgrader{
+func IoTCentralApplicationV0ToV1() pluginsdk.StateUpgrader {
+	return pluginsdk.StateUpgrader{
 		Version: 0,
 		Type:    iotCentralApplicationV0Schema().CoreConfigSchema().ImpliedType(),
 		Upgrade: iotCentralApplicationUpgradeV0ToV1,
 	}
 }
 
-func iotCentralApplicationV0Schema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
+func iotCentralApplicationV0Schema() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ApplicationName,
@@ -35,20 +35,20 @@ func iotCentralApplicationV0Schema() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"sub_domain": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validate.ApplicationSubdomain,
 			},
 
 			"display_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validate.ApplicationDisplayName,
 			},
 
 			"sku": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(iotcentral.F1),
@@ -59,7 +59,7 @@ func iotCentralApplicationV0Schema() *schema.Resource {
 				Default: iotcentral.ST1,
 			},
 			"template": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validate.ApplicationTemplateName,

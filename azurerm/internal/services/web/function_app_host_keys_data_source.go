@@ -5,50 +5,50 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func dataSourceFunctionAppHostKeys() *schema.Resource {
-	return &schema.Resource{
+func dataSourceFunctionAppHostKeys() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Read: dataSourceFunctionAppHostKeysRead,
 
-		Timeouts: &schema.ResourceTimeout{
-			Read: schema.DefaultTimeout(5 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Read: pluginsdk.DefaultTimeout(5 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 			},
 
 			"resource_group_name": azure.SchemaResourceGroupNameForDataSource(),
 
 			"master_key": {
-				Type:       schema.TypeString,
+				Type:       pluginsdk.TypeString,
 				Computed:   true,
 				Sensitive:  true,
 				Deprecated: "This property has been renamed to `primary_key` and will be removed in v3.0 of the provider in support of HashiCorp's inclusive language policy which can be found here: https://discuss.hashicorp.com/t/inclusive-language-changes",
 			},
 
 			"primary_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"default_function_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"event_grid_extension_config_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
@@ -56,7 +56,7 @@ func dataSourceFunctionAppHostKeys() *schema.Resource {
 	}
 }
 
-func dataSourceFunctionAppHostKeysRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceFunctionAppHostKeysRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Web.AppServicesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -77,7 +77,7 @@ func dataSourceFunctionAppHostKeysRead(d *schema.ResourceData, meta interface{})
 	}
 	d.SetId(*functionSettings.ID)
 
-	return resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+	return resource.Retry(d.Timeout(pluginsdk.TimeoutCreate), func() *resource.RetryError {
 		res, err := client.ListHostKeys(ctx, resourceGroup, name)
 		if err != nil {
 			if utils.ResponseWasNotFound(res.Response) {

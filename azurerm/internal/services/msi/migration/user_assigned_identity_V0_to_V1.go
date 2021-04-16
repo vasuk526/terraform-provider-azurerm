@@ -3,27 +3,27 @@ package migration
 import (
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-func UserAssignedIdentityV0ToV1() schema.StateUpgrader {
-	return schema.StateUpgrader{
+func UserAssignedIdentityV0ToV1() pluginsdk.StateUpgrader {
+	return pluginsdk.StateUpgrader{
 		Version: 0,
 		Type:    userAssignedIdentityV0Schema().CoreConfigSchema().ImpliedType(),
 		Upgrade: userAssignedIdentityUpgradeV0ToV1,
 	}
 }
 
-func userAssignedIdentityV0Schema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
+func userAssignedIdentityV0Schema() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringLenBetween(3, 128),
@@ -36,12 +36,12 @@ func userAssignedIdentityV0Schema() *schema.Resource {
 			"tags": tags.Schema(),
 
 			"principal_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"client_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 		},

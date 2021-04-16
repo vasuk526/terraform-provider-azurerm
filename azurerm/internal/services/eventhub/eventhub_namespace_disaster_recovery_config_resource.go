@@ -10,44 +10,44 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/locks"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceEventHubNamespaceDisasterRecoveryConfig() *schema.Resource {
-	return &schema.Resource{
+func resourceEventHubNamespaceDisasterRecoveryConfig() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceEventHubNamespaceDisasterRecoveryConfigCreate,
 		Read:   resourceEventHubNamespaceDisasterRecoveryConfigRead,
 		Update: resourceEventHubNamespaceDisasterRecoveryConfigUpdate,
 		Delete: resourceEventHubNamespaceDisasterRecoveryConfigDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ValidateEventHubAuthorizationRuleName(),
 			},
 
 			"namespace_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ValidateEventHubNamespaceName(),
@@ -56,14 +56,14 @@ func resourceEventHubNamespaceDisasterRecoveryConfig() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"partner_namespace_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: azure.ValidateResourceIDOrEmpty,
 			},
 
 			// this property is broken and should not be reimplemented after 3.0 until this is addressed: https://github.com/Azure/azure-sdk-for-go/issues/5893
 			"alternate_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.ValidateEventHubNamespaceName(),
 				Deprecated:   "This property has been deprecated and will be removed in v3.0 of the provider as any DRC created with an alternate name cannot be deleted and the service is not going to change this. Please see: https://github.com/Azure/azure-sdk-for-go/issues/5893",
@@ -72,7 +72,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfig() *schema.Resource {
 	}
 }
 
-func resourceEventHubNamespaceDisasterRecoveryConfigCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubNamespaceDisasterRecoveryConfigCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.DisasterRecoveryConfigsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -113,7 +113,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigCreate(d *schema.ResourceDat
 		return fmt.Errorf("Error creating/updating EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
-	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(schema.TimeoutCreate)); err != nil {
+	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(pluginsdk.TimeoutCreate)); err != nil {
 		return fmt.Errorf("Error waiting for replication to complete for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
@@ -131,7 +131,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigCreate(d *schema.ResourceDat
 	return resourceEventHubNamespaceDisasterRecoveryConfigRead(d, meta)
 }
 
-func resourceEventHubNamespaceDisasterRecoveryConfigUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubNamespaceDisasterRecoveryConfigUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.DisasterRecoveryConfigsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -155,7 +155,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigUpdate(d *schema.ResourceDat
 			return fmt.Errorf("Error issuing break pairing request for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 		}
 
-		if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(schema.TimeoutUpdate)); err != nil {
+		if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(pluginsdk.TimeoutUpdate)); err != nil {
 			return fmt.Errorf("Error waiting for break pairing request to complete for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 		}
 	}
@@ -174,14 +174,14 @@ func resourceEventHubNamespaceDisasterRecoveryConfigUpdate(d *schema.ResourceDat
 		return fmt.Errorf("Error creating/updating EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
-	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(schema.TimeoutUpdate)); err != nil {
+	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(pluginsdk.TimeoutUpdate)); err != nil {
 		return fmt.Errorf("Error waiting for replication to complete for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
 	return resourceEventHubNamespaceDisasterRecoveryConfigRead(d, meta)
 }
 
-func resourceEventHubNamespaceDisasterRecoveryConfigRead(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubNamespaceDisasterRecoveryConfigRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.DisasterRecoveryConfigsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -216,7 +216,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigRead(d *schema.ResourceData,
 	return nil
 }
 
-func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.DisasterRecoveryConfigsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -241,7 +241,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *schema.ResourceDat
 		return fmt.Errorf("Error breaking pairing for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
-	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(schema.TimeoutDelete)); err != nil {
+	if err := resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx, client, resourceGroup, namespaceName, name, d.Timeout(pluginsdk.TimeoutDelete)); err != nil {
 		return fmt.Errorf("Error waiting for break pairing request to complete for EventHub Namespace Disaster Recovery Configs %q (Namespace %q / Resource Group %q): %s", name, namespaceName, resourceGroup, err)
 	}
 
@@ -254,7 +254,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *schema.ResourceDat
 		Pending:    []string{"200"},
 		Target:     []string{"404"},
 		MinTimeout: 30 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutDelete),
+		Timeout:    d.Timeout(pluginsdk.TimeoutDelete),
 		Refresh: func() (interface{}, string, error) {
 			resp, err := client.Get(ctx, resourceGroup, namespaceName, name)
 			if err != nil {
@@ -278,7 +278,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *schema.ResourceDat
 		Pending:    []string{"NameInUse"},
 		Target:     []string{"None"},
 		MinTimeout: 30 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutDelete),
+		Timeout:    d.Timeout(pluginsdk.TimeoutDelete),
 		Refresh: func() (interface{}, string, error) {
 			resp, err := client.CheckNameAvailability(ctx, resourceGroup, namespaceName, eventhub.CheckNameAvailabilityParameter{Name: utils.String(name)})
 			if err != nil {

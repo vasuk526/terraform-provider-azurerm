@@ -6,19 +6,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hdinsight/parse"
-
 	"github.com/Azure/azure-sdk-for-go/services/hdinsight/mgmt/2018-06-01/hdinsight"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hdinsight/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func hdinsightClusterUpdate(clusterKind string, readFunc schema.ReadFunc) schema.UpdateFunc {
-	return func(d *schema.ResourceData, meta interface{}) error {
+func hdinsightClusterUpdate(clusterKind string, readFunc pluginsdk.ReadFunc) pluginsdk.UpdateFunc {
+	return func(d *pluginsdk.ResourceData, meta interface{}) error {
 		client := meta.(*clients.Client).HDInsight.ClustersClient
 		extensionsClient := meta.(*clients.Client).HDInsight.ExtensionsClient
 		ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
@@ -99,7 +98,7 @@ func hdinsightClusterUpdate(clusterKind string, readFunc schema.ReadFunc) schema
 					Target:     []string{"Running"},
 					Refresh:    hdInsightWaitForReadyRefreshFunc(ctx, client, resourceGroup, name),
 					MinTimeout: 15 * time.Second,
-					Timeout:    d.Timeout(schema.TimeoutUpdate),
+					Timeout:    d.Timeout(pluginsdk.TimeoutUpdate),
 				}
 
 				if _, err := stateConf.WaitForState(); err != nil {
@@ -145,8 +144,8 @@ func hdinsightClusterUpdate(clusterKind string, readFunc schema.ReadFunc) schema
 	}
 }
 
-func hdinsightClusterDelete(clusterKind string) schema.DeleteFunc {
-	return func(d *schema.ResourceData, meta interface{}) error {
+func hdinsightClusterDelete(clusterKind string) pluginsdk.DeleteFunc {
+	return func(d *pluginsdk.ResourceData, meta interface{}) error {
 		client := meta.(*clients.Client).HDInsight.ClustersClient
 		ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 		defer cancel()
@@ -231,7 +230,7 @@ func expandHDInsightRoles(input []interface{}, definition hdInsightRoleDefinitio
 	return &roles, nil
 }
 
-func flattenHDInsightRoles(d *schema.ResourceData, input *hdinsight.ComputeProfile, definition hdInsightRoleDefinition) []interface{} {
+func flattenHDInsightRoles(d *pluginsdk.ResourceData, input *hdinsight.ComputeProfile, definition hdInsightRoleDefinition) []interface{} {
 	if input == nil || input.Roles == nil {
 		return []interface{}{}
 	}
@@ -359,7 +358,7 @@ func expandHDInsightsMetastore(input []interface{}) map[string]interface{} {
 	return config
 }
 
-func flattenHDInsightsMetastores(d *schema.ResourceData, configurations map[string]map[string]*string) {
+func flattenHDInsightsMetastores(d *pluginsdk.ResourceData, configurations map[string]map[string]*string) {
 	result := map[string]interface{}{}
 
 	hiveEnv, envExists := configurations["hive-env"]

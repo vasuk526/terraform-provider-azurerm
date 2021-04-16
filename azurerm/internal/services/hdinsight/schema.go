@@ -4,37 +4,39 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+
 	"github.com/Azure/azure-sdk-for-go/services/hdinsight/mgmt/2018-06-01/hdinsight"
 	"github.com/hashicorp/go-getter/helper/url"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hdinsight/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func SchemaHDInsightName() *schema.Schema {
-	return &schema.Schema{
-		Type:         schema.TypeString,
+func SchemaHDInsightName() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:         pluginsdk.TypeString,
 		Required:     true,
 		ForceNew:     true,
 		ValidateFunc: validate.HDInsightName,
 	}
 }
 
-func SchemaHDInsightDataSourceName() *schema.Schema {
-	return &schema.Schema{
-		Type:         schema.TypeString,
+func SchemaHDInsightDataSourceName() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:         pluginsdk.TypeString,
 		Required:     true,
 		ValidateFunc: validate.HDInsightName,
 	}
 }
 
-func SchemaHDInsightTier() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeString,
+func SchemaHDInsightTier() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeString,
 		Required: true,
 		ForceNew: true,
 		ValidateFunc: validation.StringInSlice([]string{
@@ -46,9 +48,9 @@ func SchemaHDInsightTier() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightTls() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeString,
+func SchemaHDInsightTls() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeString,
 		Optional: true,
 		ForceNew: true,
 		ValidateFunc: validation.StringInSlice([]string{
@@ -59,9 +61,9 @@ func SchemaHDInsightTls() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightClusterVersion() *schema.Schema {
-	return &schema.Schema{
-		Type:             schema.TypeString,
+func SchemaHDInsightClusterVersion() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:             pluginsdk.TypeString,
 		Required:         true,
 		ForceNew:         true,
 		ValidateFunc:     validate.HDInsightClusterVersion,
@@ -69,7 +71,7 @@ func SchemaHDInsightClusterVersion() *schema.Schema {
 	}
 }
 
-func hdinsightClusterVersionDiffSuppressFunc(_, old, new string, _ *schema.ResourceData) bool {
+func hdinsightClusterVersionDiffSuppressFunc(_, old, new string, _ *pluginsdk.ResourceData) bool {
 	// `3.6` gets converted to `3.6.1000.67`; so let's just compare major/minor if possible
 	o := strings.Split(old, ".")
 	n := strings.Split(new, ".")
@@ -86,16 +88,16 @@ func hdinsightClusterVersionDiffSuppressFunc(_, old, new string, _ *schema.Resou
 	return false
 }
 
-func SchemaHDInsightsGateway() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsGateway() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Required: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				// TODO 3.0: remove this attribute
 				"enabled": {
-					Type:       schema.TypeBool,
+					Type:       pluginsdk.TypeBool,
 					Optional:   true,
 					Default:    true,
 					Deprecated: "HDInsight doesn't support disabling gateway anymore",
@@ -110,16 +112,16 @@ func SchemaHDInsightsGateway() *schema.Schema {
 				},
 				// NOTE: these are Required since if these aren't present you get a `500 bad request`
 				"username": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ForceNew: true,
 				},
 				"password": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					Sensitive: true,
 					// Azure returns the key as *****. We'll suppress that here.
-					DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					DiffSuppressFunc: func(k, old, new string, d *pluginsdk.ResourceData) bool {
 						return (new == d.Get(k).(string)) && (old == "*****")
 					},
 				},
@@ -128,35 +130,35 @@ func SchemaHDInsightsGateway() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightsExternalMetastore() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsExternalMetastore() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"server": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ForceNew: true,
 				},
 				"database_name": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ForceNew: true,
 				},
 				"username": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ForceNew: true,
 				},
 				"password": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					ForceNew:  true,
 					Sensitive: true,
 					// Azure returns the key as *****. We'll suppress that here.
-					DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					DiffSuppressFunc: func(k, old, new string, d *pluginsdk.ResourceData) bool {
 						return (new == d.Get(k).(string)) && (old == "*****")
 					},
 				},
@@ -165,13 +167,13 @@ func SchemaHDInsightsExternalMetastore() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightsExternalMetastores() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsExternalMetastores() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"hive": SchemaHDInsightsExternalMetastore(),
 
 				"oozie": SchemaHDInsightsExternalMetastore(),
@@ -182,25 +184,25 @@ func SchemaHDInsightsExternalMetastores() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightsMonitor() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsMonitor() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"log_analytics_workspace_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ValidateFunc: validation.IsUUID,
 				},
 				"primary_key": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					Sensitive:    true,
 					ValidateFunc: validation.StringIsNotEmpty,
 					// Azure doesn't return the key
-					DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					DiffSuppressFunc: func(k, old, new string, d *pluginsdk.ResourceData) bool {
 						return (new == d.Get(k).(string)) && (old == "*****")
 					},
 				},
@@ -272,7 +274,7 @@ func ExpandHDInsightsOozieMetastore(input []interface{}) map[string]interface{} 
 			"oozie.service.JPAService.jdbc.url":      fmt.Sprintf("jdbc:sqlserver://%s;database=%s;encrypt=true;trustServerCertificate=true;create=false;loginTimeout=300", server, database),
 			"oozie.service.JPAService.jdbc.username": username,
 			"oozie.service.JPAService.jdbc.password": password,
-			"oozie.db.schema.name":                   "oozie",
+			"oozie.db.pluginsdk.name":                "oozie",
 		},
 		"oozie-env": map[string]interface{}{
 			"oozie_database":                       "Existing MSSQL Server database with SQL authentication",
@@ -445,27 +447,27 @@ func FlattenHDInsightsAmbariMetastore(conf map[string]*string) []interface{} {
 	return nil
 }
 
-func SchemaHDInsightsStorageAccounts() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsStorageAccounts() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"storage_account_key": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ForceNew:     true,
 					Sensitive:    true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 				"storage_container_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ForceNew:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 				"is_default": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Required: true,
 					ForceNew: true,
 				},
@@ -474,34 +476,34 @@ func SchemaHDInsightsStorageAccounts() *schema.Schema {
 	}
 }
 
-func SchemaHDInsightsGen2StorageAccounts() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func SchemaHDInsightsGen2StorageAccounts() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		// HDInsight doesn't seem to allow adding more than one gen2 cluster right now.
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"storage_resource_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ForceNew:     true,
 					ValidateFunc: azure.ValidateResourceID,
 				},
 				"filesystem_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ForceNew:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 				"managed_identity_resource_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ForceNew:     true,
 					ValidateFunc: azure.ValidateResourceID,
 				},
 				"is_default": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Required: true,
 					ForceNew: true,
 				},
@@ -674,49 +676,49 @@ func ValidateSchemaHDInsightNodeDefinitionVMSize() schema.SchemaValidateFunc {
 	}, true)
 }
 
-func SchemaHDInsightNodeDefinition(schemaLocation string, definition HDInsightNodeDefinition, required bool) *schema.Schema {
-	result := map[string]*schema.Schema{
+func SchemaHDInsightNodeDefinition(schemaLocation string, definition HDInsightNodeDefinition, required bool) *pluginsdk.Schema {
+	result := map[string]*pluginsdk.Schema{
 		"vm_size": {
-			Type:             schema.TypeString,
+			Type:             pluginsdk.TypeString,
 			Required:         true,
 			ForceNew:         true,
 			DiffSuppressFunc: suppress.CaseDifference,
 			ValidateFunc:     ValidateSchemaHDInsightNodeDefinitionVMSize(),
 		},
 		"username": {
-			Type:     schema.TypeString,
+			Type:     pluginsdk.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
 		"password": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Optional:  true,
 			ForceNew:  true,
 			Sensitive: true,
 		},
 		"ssh_keys": {
-			Type:     schema.TypeSet,
+			Type:     pluginsdk.TypeSet,
 			Optional: true,
 			ForceNew: true,
-			Elem: &schema.Schema{
-				Type:         schema.TypeString,
+			Elem: &pluginsdk.Schema{
+				Type:         pluginsdk.TypeString,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
-			Set: schema.HashString,
+			Set: pluginsdk.HashString,
 			ConflictsWith: []string{
 				fmt.Sprintf("%s.0.password", schemaLocation),
 			},
 		},
 
 		"subnet_id": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: azure.ValidateResourceIDOrEmpty,
 		},
 
 		"virtual_network_id": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: azure.ValidateResourceIDOrEmpty,
@@ -730,36 +732,36 @@ func SchemaHDInsightNodeDefinition(schemaLocation string, definition HDInsightNo
 		}
 
 		// TODO 3.0: remove this property
-		result["min_instance_count"] = &schema.Schema{
-			Type:         schema.TypeInt,
+		result["min_instance_count"] = &pluginsdk.Schema{
+			Type:         pluginsdk.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
 			Computed:     true,
 			Deprecated:   "this has been deprecated from the API and will be removed in version 3.0 of the provider",
 			ValidateFunc: countValidation,
 		}
-		result["target_instance_count"] = &schema.Schema{
-			Type:         schema.TypeInt,
+		result["target_instance_count"] = &pluginsdk.Schema{
+			Type:         pluginsdk.TypeInt,
 			Required:     true,
 			ValidateFunc: countValidation,
 		}
 	}
 
 	if definition.CanSpecifyDisks {
-		result["number_of_disks_per_node"] = &schema.Schema{
-			Type:         schema.TypeInt,
+		result["number_of_disks_per_node"] = &pluginsdk.Schema{
+			Type:         pluginsdk.TypeInt,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IntBetween(1, *definition.MaxNumberOfDisksPerNode),
 		}
 	}
 
-	s := &schema.Schema{
-		Type:     schema.TypeList,
+	s := &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		MaxItems: 1,
 		Required: required,
 		Optional: !required,
-		Elem: &schema.Resource{
+		Elem: &pluginsdk.Resource{
 			Schema: result,
 		},
 	}
@@ -801,7 +803,7 @@ func ExpandHDInsightNodeDefinition(name string, input []interface{}, definition 
 	if password != "" {
 		role.OsProfile.LinuxOperatingSystemProfile.Password = utils.String(password)
 	} else {
-		sshKeysRaw := v["ssh_keys"].(*schema.Set).List()
+		sshKeysRaw := v["ssh_keys"].(*pluginsdk.Set).List()
 		sshKeys := make([]hdinsight.SSHPublicKey, 0)
 		for _, v := range sshKeysRaw {
 			sshKeys = append(sshKeys, hdinsight.SSHPublicKey{
@@ -854,7 +856,7 @@ func FlattenHDInsightNodeDefinition(input *hdinsight.Role, existing []interface{
 		"vm_size":            "",
 		"username":           "",
 		"password":           "",
-		"ssh_keys":           schema.NewSet(schema.HashString, []interface{}{}),
+		"ssh_keys":           pluginsdk.NewSet(pluginsdk.HashString, []interface{}{}),
 		"subnet_id":          "",
 		"virtual_network_id": "",
 	}
@@ -872,8 +874,8 @@ func FlattenHDInsightNodeDefinition(input *hdinsight.Role, existing []interface{
 		existingV := existing[0].(map[string]interface{})
 		output["password"] = existingV["password"].(string)
 
-		sshKeys := existingV["ssh_keys"].(*schema.Set).List()
-		output["ssh_keys"] = schema.NewSet(schema.HashString, sshKeys)
+		sshKeys := existingV["ssh_keys"].(*pluginsdk.Set).List()
+		output["ssh_keys"] = pluginsdk.NewSet(pluginsdk.HashString, sshKeys)
 
 		// whilst the VMSize can be returned from `input.HardwareProfile.VMSize` - it can be malformed
 		// for example, `small`, `medium`, `large` and `extralarge` can be returned inside of actual VM Size

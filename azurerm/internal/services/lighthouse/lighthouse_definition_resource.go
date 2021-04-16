@@ -9,73 +9,73 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/managedservices/mgmt/2019-06-01/managedservices"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/lighthouse/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceLighthouseDefinition() *schema.Resource {
-	return &schema.Resource{
+func resourceLighthouseDefinition() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceLighthouseDefinitionCreateUpdate,
 		Read:   resourceLighthouseDefinitionRead,
 		Update: resourceLighthouseDefinitionCreateUpdate,
 		Delete: resourceLighthouseDefinitionDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"managing_tenant_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.IsUUID,
 			},
 
 			"scope": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.SubscriptionID,
 			},
 
 			"authorization": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
 				MinItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"principal_id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.IsUUID,
 						},
 
 						"role_definition_id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.IsUUID,
 						},
 
 						"principal_display_name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
@@ -84,12 +84,12 @@ func resourceLighthouseDefinition() *schema.Resource {
 			},
 
 			"description": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"lighthouse_definition_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ForceNew:     true,
@@ -99,7 +99,7 @@ func resourceLighthouseDefinition() *schema.Resource {
 	}
 }
 
-func resourceLighthouseDefinitionCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceLighthouseDefinitionCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Lighthouse.DefinitionsClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -137,7 +137,7 @@ func resourceLighthouseDefinitionCreateUpdate(d *schema.ResourceData, meta inter
 	parameters := managedservices.RegistrationDefinition{
 		Properties: &managedservices.RegistrationDefinitionProperties{
 			Description:                utils.String(d.Get("description").(string)),
-			Authorizations:             expandLighthouseDefinitionAuthorization(d.Get("authorization").(*schema.Set).List()),
+			Authorizations:             expandLighthouseDefinitionAuthorization(d.Get("authorization").(*pluginsdk.Set).List()),
 			RegistrationDefinitionName: utils.String(d.Get("name").(string)),
 			ManagedByTenantID:          utils.String(d.Get("managing_tenant_id").(string)),
 		},
@@ -161,7 +161,7 @@ func resourceLighthouseDefinitionCreateUpdate(d *schema.ResourceData, meta inter
 	return resourceLighthouseDefinitionRead(d, meta)
 }
 
-func resourceLighthouseDefinitionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceLighthouseDefinitionRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Lighthouse.DefinitionsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -197,7 +197,7 @@ func resourceLighthouseDefinitionRead(d *schema.ResourceData, meta interface{}) 
 	return nil
 }
 
-func resourceLighthouseDefinitionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceLighthouseDefinitionDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Lighthouse.DefinitionsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

@@ -8,8 +8,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/machinelearningservices/mgmt/2020-04-01/machinelearningservices"
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/mgmt/2020-11-01-preview/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2021-01-01/storage"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -17,8 +15,10 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/machinelearning/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/machinelearning/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
@@ -32,8 +32,8 @@ const (
 	Enterprise WorkspaceSku = "Enterprise"
 )
 
-func resourceMachineLearningWorkspace() *schema.Resource {
-	return &schema.Resource{
+func resourceMachineLearningWorkspace() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceMachineLearningWorkspaceCreate,
 		Read:   resourceMachineLearningWorkspaceRead,
 		Update: resourceMachineLearningWorkspaceUpdate,
@@ -44,16 +44,16 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.WorkspaceName,
@@ -64,7 +64,7 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"application_insights_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				// TODO -- use the custom validation function of application insights
@@ -74,7 +74,7 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			},
 
 			"key_vault_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: keyVaultValidate.VaultID,
@@ -83,7 +83,7 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			},
 
 			"storage_account_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				// TODO -- use the custom validation function of storage account, when issue https://github.com/Azure/azure-rest-api-specs/issues/8323 is addressed
@@ -93,24 +93,24 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Required: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(machinelearningservices.SystemAssigned),
 							}, false),
 						},
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"tenant_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -118,7 +118,7 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			},
 
 			"container_registry_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				// TODO -- use the custom validation function of container registry
@@ -128,22 +128,22 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 			},
 
 			"description": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"friendly_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"high_business_impact": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 			},
 
 			"sku_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  "Basic",
 				ValidateFunc: validation.StringInSlice([]string{
@@ -158,7 +158,7 @@ func resourceMachineLearningWorkspace() *schema.Resource {
 	}
 }
 
-func resourceMachineLearningWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMachineLearningWorkspaceCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MachineLearning.WorkspacesClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -249,7 +249,7 @@ func resourceMachineLearningWorkspaceCreate(d *schema.ResourceData, meta interfa
 	return resourceMachineLearningWorkspaceRead(d, meta)
 }
 
-func resourceMachineLearningWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMachineLearningWorkspaceRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MachineLearning.WorkspacesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -296,7 +296,7 @@ func resourceMachineLearningWorkspaceRead(d *schema.ResourceData, meta interface
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceMachineLearningWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceMachineLearningWorkspaceUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MachineLearning.WorkspacesClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -337,7 +337,7 @@ func resourceMachineLearningWorkspaceUpdate(d *schema.ResourceData, meta interfa
 	return resourceMachineLearningWorkspaceRead(d, meta)
 }
 
-func resourceMachineLearningWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMachineLearningWorkspaceDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MachineLearning.WorkspacesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

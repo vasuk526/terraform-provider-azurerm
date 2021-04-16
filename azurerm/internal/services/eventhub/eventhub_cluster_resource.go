@@ -10,20 +10,20 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceEventHubCluster() *schema.Resource {
-	return &schema.Resource{
+func resourceEventHubCluster() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceEventHubClusterCreateUpdate,
 		Read:   resourceEventHubClusterRead,
 		Update: resourceEventHubClusterCreateUpdate,
@@ -33,17 +33,17 @@ func resourceEventHubCluster() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
 			// You can't delete a cluster until at least 4 hours have passed from the initial creation.
-			Delete: schema.DefaultTimeout(300 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(300 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ValidateEventHubName(),
@@ -54,7 +54,7 @@ func resourceEventHubCluster() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"sku_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringMatch(
@@ -68,7 +68,7 @@ func resourceEventHubCluster() *schema.Resource {
 	}
 }
 
-func resourceEventHubClusterCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubClusterCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.ClusterClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -106,7 +106,7 @@ func resourceEventHubClusterCreateUpdate(d *schema.ResourceData, meta interface{
 	return resourceEventHubClusterRead(d, meta)
 }
 
-func resourceEventHubClusterRead(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubClusterRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.ClusterClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -134,7 +134,7 @@ func resourceEventHubClusterRead(d *schema.ResourceData, meta interface{}) error
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceEventHubClusterDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceEventHubClusterDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Eventhub.ClusterClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -144,7 +144,7 @@ func resourceEventHubClusterDelete(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// The EventHub Cluster can't be deleted until four hours after creation so we'll keep retrying until it can be deleted.
-	return resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+	return resource.Retry(d.Timeout(pluginsdk.TimeoutDelete), func() *resource.RetryError {
 		future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
 		if err != nil {
 			if response.WasNotFound(future.Response()) {

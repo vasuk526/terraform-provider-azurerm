@@ -10,8 +10,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	azValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -26,8 +26,8 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceMsSqlDatabase() *schema.Resource {
-	return &schema.Resource{
+func resourceMsSqlDatabase() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceMsSqlDatabaseCreateUpdate,
 		Read:   resourceMsSqlDatabaseRead,
 		Update: resourceMsSqlDatabaseCreateUpdate,
@@ -38,37 +38,37 @@ func resourceMsSqlDatabase() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ValidateMsSqlDatabaseName,
 			},
 
 			"server_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ServerID,
 			},
 
 			"auto_pause_delay_in_minutes": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validate.DatabaseAutoPauseDelay,
 			},
 
 			"create_mode": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
@@ -87,7 +87,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"collation": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ForceNew:     true,
@@ -95,7 +95,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"elastic_pool_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.ElasticPoolID,
 			},
@@ -103,7 +103,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			"extended_auditing_policy": helper.ExtendedAuditingSchema(),
 
 			"license_type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -117,21 +117,21 @@ func resourceMsSqlDatabase() *schema.Resource {
 			"short_term_retention_policy": helper.ShortTermRetentionPolicySchema(),
 
 			"max_size_gb": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IntBetween(1, 4096),
 			},
 
 			"min_capacity": {
-				Type:         schema.TypeFloat,
+				Type:         pluginsdk.TypeFloat,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: azValidate.FloatInSlice([]float64{0, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 24, 32, 40}),
 			},
 
 			"restore_point_in_time": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				Computed:         true,
 				DiffSuppressFunc: suppress.RFC3339Time,
@@ -139,32 +139,32 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"recover_database_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.RecoverableDatabaseID,
 			},
 
 			"restore_dropped_database_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.RestorableDatabaseID,
 			},
 
 			"read_replica_count": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IntBetween(0, 4),
 			},
 
 			"read_scale": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			"sample_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -173,7 +173,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"sku_name": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				Computed:         true,
 				ValidateFunc:     validate.DatabaseSkuName(),
@@ -181,7 +181,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"creation_source_database_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				Computed:     true,
@@ -189,7 +189,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"storage_account_type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  string(sql.GRS),
@@ -201,24 +201,24 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"zone_redundant": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			"threat_detection_policy": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"disabled_alerts": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Set:      schema.HashString,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Set:      pluginsdk.HashString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 								ValidateFunc: validation.StringInSlice([]string{
 									"Sql_Injection",
 									"Sql_Injection_Vulnerability",
@@ -228,7 +228,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 						},
 
 						"email_account_admins": {
-							Type:             schema.TypeString,
+							Type:             pluginsdk.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: suppress.CaseDifference,
 							Default:          string(sql.SecurityAlertPolicyEmailAccountAdminsDisabled),
@@ -239,22 +239,22 @@ func resourceMsSqlDatabase() *schema.Resource {
 						},
 
 						"email_addresses": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 
 						"retention_days": {
-							Type:         schema.TypeInt,
+							Type:         pluginsdk.TypeInt,
 							Optional:     true,
 							ValidateFunc: validation.IntAtLeast(0),
 						},
 
 						"state": {
-							Type:             schema.TypeString,
+							Type:             pluginsdk.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: suppress.CaseDifference,
 							Default:          string(sql.SecurityAlertPolicyStateDisabled),
@@ -266,20 +266,20 @@ func resourceMsSqlDatabase() *schema.Resource {
 						},
 
 						"storage_account_access_key": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							Sensitive:    true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"storage_endpoint": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"use_server_default": {
-							Type:             schema.TypeString,
+							Type:             pluginsdk.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: suppress.CaseDifference,
 							Default:          string(sql.SecurityAlertPolicyUseServerDefaultDisabled),
@@ -293,7 +293,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 			},
 
 			"geo_backup_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
@@ -310,7 +310,7 @@ func resourceMsSqlDatabase() *schema.Resource {
 	}
 }
 
-func resourceMsSqlDatabaseCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceMsSqlDatabaseCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MSSQL.DatabasesClient
 	auditingClient := meta.(*clients.Client).MSSQL.DatabaseExtendedBlobAuditingPoliciesClient
 	serverClient := meta.(*clients.Client).MSSQL.ServersClient
@@ -536,7 +536,7 @@ func resourceMsSqlDatabaseCreateUpdate(d *schema.ResourceData, meta interface{})
 	return resourceMsSqlDatabaseRead(d, meta)
 }
 
-func resourceMsSqlDatabaseRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMsSqlDatabaseRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MSSQL.DatabasesClient
 	threatClient := meta.(*clients.Client).MSSQL.DatabaseThreatDetectionPoliciesClient
 	auditingClient := meta.(*clients.Client).MSSQL.DatabaseExtendedBlobAuditingPoliciesClient
@@ -661,7 +661,7 @@ func resourceMsSqlDatabaseRead(d *schema.ResourceData, meta interface{}) error {
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceMsSqlDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMsSqlDatabaseDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).MSSQL.DatabasesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -686,7 +686,7 @@ func resourceMsSqlDatabaseDelete(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func flattenMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, policy sql.DatabaseSecurityAlertPolicy) []interface{} {
+func flattenMsSqlServerThreatDetectionPolicy(d *pluginsdk.ResourceData, policy sql.DatabaseSecurityAlertPolicy) []interface{} {
 	// The SQL database threat detection API always returns the default value even if never set.
 	// If the values are on their default one, threat it as not set.
 	properties := policy.DatabaseSecurityAlertPolicyProperties
@@ -701,7 +701,7 @@ func flattenMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, policy sql.
 	threatDetectionPolicy["use_server_default"] = string(properties.UseServerDefault)
 
 	if disabledAlerts := properties.DisabledAlerts; disabledAlerts != nil {
-		flattenedAlerts := schema.NewSet(schema.HashString, []interface{}{})
+		flattenedAlerts := pluginsdk.NewSet(pluginsdk.HashString, []interface{}{})
 		if v := *disabledAlerts; v != "" {
 			parsedAlerts := strings.Split(v, ";")
 			for _, a := range parsedAlerts {
@@ -711,7 +711,7 @@ func flattenMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, policy sql.
 		threatDetectionPolicy["disabled_alerts"] = flattenedAlerts
 	}
 	if emailAddresses := properties.EmailAddresses; emailAddresses != nil {
-		flattenedEmails := schema.NewSet(schema.HashString, []interface{}{})
+		flattenedEmails := pluginsdk.NewSet(pluginsdk.HashString, []interface{}{})
 		if v := *emailAddresses; v != "" {
 			parsedEmails := strings.Split(*emailAddresses, ";")
 			for _, e := range parsedEmails {
@@ -735,7 +735,7 @@ func flattenMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, policy sql.
 	return []interface{}{threatDetectionPolicy}
 }
 
-func expandMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, location string) *sql.DatabaseSecurityAlertPolicy {
+func expandMsSqlServerThreatDetectionPolicy(d *pluginsdk.ResourceData, location string) *sql.DatabaseSecurityAlertPolicy {
 	policy := sql.DatabaseSecurityAlertPolicy{
 		Location: utils.String(location),
 		DatabaseSecurityAlertPolicyProperties: &sql.DatabaseSecurityAlertPolicyProperties{
@@ -757,7 +757,7 @@ func expandMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, location str
 		properties.UseServerDefault = sql.SecurityAlertPolicyUseServerDefault(threatDetection["use_server_default"].(string))
 
 		if v, ok := threatDetection["disabled_alerts"]; ok {
-			alerts := v.(*schema.Set).List()
+			alerts := v.(*pluginsdk.Set).List()
 			expandedAlerts := make([]string, len(alerts))
 			for i, a := range alerts {
 				expandedAlerts[i] = a.(string)
@@ -765,7 +765,7 @@ func expandMsSqlServerThreatDetectionPolicy(d *schema.ResourceData, location str
 			properties.DisabledAlerts = utils.String(strings.Join(expandedAlerts, ";"))
 		}
 		if v, ok := threatDetection["email_addresses"]; ok {
-			emails := v.(*schema.Set).List()
+			emails := v.(*pluginsdk.Set).List()
 			expandedEmails := make([]string, len(emails))
 			for i, e := range emails {
 				expandedEmails[i] = e.(string)

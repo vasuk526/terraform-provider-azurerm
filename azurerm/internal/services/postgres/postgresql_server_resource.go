@@ -13,8 +13,6 @@ import (
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -22,7 +20,9 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/postgres/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/postgres/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
@@ -54,17 +54,17 @@ var skuList = []string{
 	"MO_Gen5_32",
 }
 
-func resourcePostgreSQLServer() *schema.Resource {
-	return &schema.Resource{
+func resourcePostgreSQLServer() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourcePostgreSQLServerCreate,
 		Read:   resourcePostgreSQLServerRead,
 		Update: resourcePostgreSQLServerUpdate,
 		Delete: resourcePostgreSQLServerDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+		Importer: &pluginsdk.ResourceImporter{
+			State: func(d *pluginsdk.ResourceData, meta interface{}) ([]*pluginsdk.ResourceData, error) {
 				if _, err := parse.ServerID(d.Id()); err != nil {
-					return []*schema.ResourceData{d}, err
+					return []*pluginsdk.ResourceData{d}, err
 				}
 
 				d.Set("create_mode", "Default")
@@ -72,20 +72,20 @@ func resourcePostgreSQLServer() *schema.Resource {
 					d.Set("create_mode", v)
 				}
 
-				return []*schema.ResourceData{d}, nil
+				return []*pluginsdk.ResourceData{d}, nil
 			},
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ServerName,
@@ -96,13 +96,13 @@ func resourcePostgreSQLServer() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"sku_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice(skuList, false),
 			},
 
 			"version": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -116,15 +116,15 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"storage_profile": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				Optional:   true,
 				Computed:   true,
 				MaxItems:   1,
 				Deprecated: "all storage_profile properties have been move to the top level. This block will be removed in version 3.0 of the provider.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"storage_mb": {
-							Type:          schema.TypeInt,
+							Type:          pluginsdk.TypeInt,
 							Optional:      true,
 							ConflictsWith: []string{"storage_mb"},
 							Deprecated:    "this has been moved to the top level and will be removed in version 3.0 of the provider.",
@@ -135,7 +135,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 						},
 
 						"backup_retention_days": {
-							Type:          schema.TypeInt,
+							Type:          pluginsdk.TypeInt,
 							Optional:      true,
 							Default:       7,
 							ConflictsWith: []string{"backup_retention_days"},
@@ -144,7 +144,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 						},
 
 						"auto_grow": {
-							Type:          schema.TypeString,
+							Type:          pluginsdk.TypeString,
 							Optional:      true,
 							Computed:      true,
 							ConflictsWith: []string{"auto_grow_enabled"},
@@ -156,7 +156,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 						},
 
 						"geo_redundant_backup": {
-							Type:          schema.TypeString,
+							Type:          pluginsdk.TypeString,
 							Optional:      true,
 							Computed:      true,
 							ForceNew:      true,
@@ -173,7 +173,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"administrator_login": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ForceNew:     true,
@@ -181,20 +181,20 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"administrator_login_password": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Optional:  true,
 				Sensitive: true,
 			},
 
 			"auto_grow_enabled": {
-				Type:          schema.TypeBool,
+				Type:          pluginsdk.TypeBool,
 				Optional:      true,
 				Computed:      true, // TODO: remove in 3.0 and default to true
 				ConflictsWith: []string{"storage_profile", "storage_profile.0.auto_grow"},
 			},
 
 			"backup_retention_days": {
-				Type:          schema.TypeInt,
+				Type:          pluginsdk.TypeInt,
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"storage_profile", "storage_profile.0.backup_retention_days"},
@@ -202,7 +202,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"geo_redundant_backup_enabled": {
-				Type:          schema.TypeBool,
+				Type:          pluginsdk.TypeBool,
 				Optional:      true,
 				ForceNew:      true,
 				Computed:      true, // TODO: remove in 2.0 and default to false
@@ -210,7 +210,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"create_mode": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  string(postgresql.CreateModeDefault),
 				ValidateFunc: validation.StringInSlice([]string{
@@ -222,19 +222,19 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"creation_source_server_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.ServerID,
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(postgresql.SystemAssigned),
@@ -242,12 +242,12 @@ func resourcePostgreSQLServer() *schema.Resource {
 						},
 
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"tenant_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -255,25 +255,25 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"infrastructure_encryption_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"public_network_access_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"restore_point_in_time": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsRFC3339Time,
 			},
 
 			"storage_mb": {
-				Type:          schema.TypeInt,
+				Type:          pluginsdk.TypeInt,
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"storage_profile", "storage_profile.0.storage_mb"},
@@ -284,7 +284,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"ssl_minimal_tls_version_enforced": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  string(postgresql.TLSEnforcementDisabled),
 				ValidateFunc: validation.StringInSlice([]string{
@@ -296,13 +296,13 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"ssl_enforcement_enabled": {
-				Type:         schema.TypeBool,
+				Type:         pluginsdk.TypeBool,
 				Optional:     true, // required in 3.0
 				ExactlyOneOf: []string{"ssl_enforcement", "ssl_enforcement_enabled"},
 			},
 
 			"ssl_enforcement": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				Deprecated:   "this has been renamed to the boolean `ssl_enforcement_enabled` and will be removed in version 3.0 of the provider.",
@@ -315,22 +315,22 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"threat_detection_policy": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 						},
 
 						"disabled_alerts": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Set:      schema.HashString,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Set:      pluginsdk.HashString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 								ValidateFunc: validation.StringInSlice([]string{
 									"Sql_Injection",
 									"Sql_Injection_Vulnerability",
@@ -342,35 +342,35 @@ func resourcePostgreSQLServer() *schema.Resource {
 						},
 
 						"email_account_admins": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 						},
 
 						"email_addresses": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 								// todo email validation in code
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 
 						"retention_days": {
-							Type:         schema.TypeInt,
+							Type:         pluginsdk.TypeInt,
 							Optional:     true,
 							ValidateFunc: validation.IntAtLeast(0),
 						},
 
 						"storage_account_access_key": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							Sensitive:    true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"storage_endpoint": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
@@ -379,7 +379,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 			},
 
 			"fqdn": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
@@ -404,7 +404,7 @@ func resourcePostgreSQLServer() *schema.Resource {
 	}
 }
 
-func resourcePostgreSQLServerCreate(d *schema.ResourceData, meta interface{}) error {
+func resourcePostgreSQLServerCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Postgres.ServersClient
 	securityClient := meta.(*clients.Client).Postgres.ServerSecurityAlertPoliciesClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
@@ -548,7 +548,7 @@ func resourcePostgreSQLServerCreate(d *schema.ResourceData, meta interface{}) er
 		Target:     []string{string(postgresql.ServerStateReady)},
 		Refresh:    postgreSqlStateRefreshFunc(ctx, client, resourceGroup, name),
 		MinTimeout: 15 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(pluginsdk.TimeoutCreate),
 	}
 
 	if _, err = stateConf.WaitForState(); err != nil {
@@ -583,7 +583,7 @@ func resourcePostgreSQLServerCreate(d *schema.ResourceData, meta interface{}) er
 	return resourcePostgreSQLServerRead(d, meta)
 }
 
-func resourcePostgreSQLServerUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourcePostgreSQLServerUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Postgres.ServersClient
 	securityClient := meta.(*clients.Client).Postgres.ServerSecurityAlertPoliciesClient
 	replicasClient := meta.(*clients.Client).Postgres.ReplicasClient
@@ -692,7 +692,7 @@ func resourcePostgreSQLServerUpdate(d *schema.ResourceData, meta interface{}) er
 	return resourcePostgreSQLServerRead(d, meta)
 }
 
-func resourcePostgreSQLServerRead(d *schema.ResourceData, meta interface{}) error {
+func resourcePostgreSQLServerRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Postgres.ServersClient
 	securityClient := meta.(*clients.Client).Postgres.ServerSecurityAlertPoliciesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
@@ -774,7 +774,7 @@ func resourcePostgreSQLServerRead(d *schema.ResourceData, meta interface{}) erro
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourcePostgreSQLServerDelete(d *schema.ResourceData, meta interface{}) error {
+func resourcePostgreSQLServerDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Postgres.ServersClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -844,7 +844,7 @@ func expandServerSkuName(skuName string) (*postgresql.Sku, error) {
 	}, nil
 }
 
-func expandPostgreSQLStorageProfile(d *schema.ResourceData) *postgresql.StorageProfile {
+func expandPostgreSQLStorageProfile(d *pluginsdk.ResourceData) *postgresql.StorageProfile {
 	storage := postgresql.StorageProfile{}
 	if v, ok := d.GetOk("storage_profile"); ok {
 		storageprofile := v.([]interface{})[0].(map[string]interface{})
@@ -918,11 +918,11 @@ func expandSecurityAlertPolicy(i interface{}) *postgresql.ServerSecurityAlertPol
 	}
 
 	if v, ok := block["disabled_alerts"]; ok {
-		props.DisabledAlerts = utils.ExpandStringSlice(v.(*schema.Set).List())
+		props.DisabledAlerts = utils.ExpandStringSlice(v.(*pluginsdk.Set).List())
 	}
 
 	if v, ok := block["email_addresses"]; ok {
-		props.EmailAddresses = utils.ExpandStringSlice(v.(*schema.Set).List())
+		props.EmailAddresses = utils.ExpandStringSlice(v.(*pluginsdk.Set).List())
 	}
 
 	if v, ok := block["email_account_admins"]; ok {

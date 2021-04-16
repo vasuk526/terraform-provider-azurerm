@@ -8,37 +8,37 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/mgmt/2020-11-01-preview/containerregistry"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceContainerRegistryWebhook() *schema.Resource {
-	return &schema.Resource{
+func resourceContainerRegistryWebhook() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceContainerRegistryWebhookCreate,
 		Read:   resourceContainerRegistryWebhookRead,
 		Update: resourceContainerRegistryWebhookUpdate,
 		Delete: resourceContainerRegistryWebhookDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateContainerRegistryWebhookName,
@@ -47,28 +47,28 @@ func resourceContainerRegistryWebhook() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"registry_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateContainerRegistryName,
 			},
 
 			"service_uri": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validateContainerRegistryWebhookServiceUri,
 			},
 
 			"custom_headers": {
-				Type:     schema.TypeMap,
+				Type:     pluginsdk.TypeMap,
 				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 
 			"status": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  containerregistry.WebhookStatusEnabled,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -78,17 +78,17 @@ func resourceContainerRegistryWebhook() *schema.Resource {
 			},
 
 			"scope": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  "",
 			},
 
 			"actions": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
 				MinItems: 1,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 					ValidateFunc: validation.StringInSlice([]string{
 						string(containerregistry.ChartDelete),
 						string(containerregistry.ChartPush),
@@ -106,7 +106,7 @@ func resourceContainerRegistryWebhook() *schema.Resource {
 	}
 }
 
-func resourceContainerRegistryWebhookCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryWebhookCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.WebhooksClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -161,7 +161,7 @@ func resourceContainerRegistryWebhookCreate(d *schema.ResourceData, meta interfa
 	return resourceContainerRegistryWebhookRead(d, meta)
 }
 
-func resourceContainerRegistryWebhookUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryWebhookUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.WebhooksClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -196,7 +196,7 @@ func resourceContainerRegistryWebhookUpdate(d *schema.ResourceData, meta interfa
 	return resourceContainerRegistryWebhookRead(d, meta)
 }
 
-func resourceContainerRegistryWebhookRead(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryWebhookRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.WebhooksClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -262,7 +262,7 @@ func resourceContainerRegistryWebhookRead(d *schema.ResourceData, meta interface
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceContainerRegistryWebhookDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceContainerRegistryWebhookDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.WebhooksClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -313,7 +313,7 @@ func validateContainerRegistryWebhookServiceUri(v interface{}, k string) (warnin
 	return warnings, errors
 }
 
-func expandWebhookPropertiesCreateParameters(d *schema.ResourceData) *containerregistry.WebhookPropertiesCreateParameters {
+func expandWebhookPropertiesCreateParameters(d *pluginsdk.ResourceData) *containerregistry.WebhookPropertiesCreateParameters {
 	serviceUri := d.Get("service_uri").(string)
 	scope := d.Get("scope").(string)
 
@@ -336,7 +336,7 @@ func expandWebhookPropertiesCreateParameters(d *schema.ResourceData) *containerr
 	return &webhookProperties
 }
 
-func expandWebhookPropertiesUpdateParameters(d *schema.ResourceData) *containerregistry.WebhookPropertiesUpdateParameters {
+func expandWebhookPropertiesUpdateParameters(d *pluginsdk.ResourceData) *containerregistry.WebhookPropertiesUpdateParameters {
 	serviceUri := d.Get("service_uri").(string)
 	scope := d.Get("scope").(string)
 
@@ -356,9 +356,9 @@ func expandWebhookPropertiesUpdateParameters(d *schema.ResourceData) *containerr
 	return &webhookProperties
 }
 
-func expandWebhookActions(d *schema.ResourceData) *[]containerregistry.WebhookAction {
+func expandWebhookActions(d *pluginsdk.ResourceData) *[]containerregistry.WebhookAction {
 	actions := make([]containerregistry.WebhookAction, 0)
-	for _, action := range d.Get("actions").(*schema.Set).List() {
+	for _, action := range d.Get("actions").(*pluginsdk.Set).List() {
 		actions = append(actions, containerregistry.WebhookAction(action.(string)))
 	}
 

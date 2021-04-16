@@ -11,21 +11,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/managementgroup/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/managementgroup/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
 var managementGroupCacheControl = "no-cache"
 
-func resourceManagementGroup() *schema.Resource {
-	return &schema.Resource{
+func resourceManagementGroup() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceManagementGroupCreateUpdate,
 		Update: resourceManagementGroupCreateUpdate,
 		Read:   resourceManagementGroupRead,
@@ -36,16 +36,16 @@ func resourceManagementGroup() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"group_id": {
-				Type:          schema.TypeString,
+				Type:          pluginsdk.TypeString,
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
@@ -55,7 +55,7 @@ func resourceManagementGroup() *schema.Resource {
 			},
 
 			"name": {
-				Type:          schema.TypeString,
+				Type:          pluginsdk.TypeString,
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
@@ -64,33 +64,33 @@ func resourceManagementGroup() *schema.Resource {
 			},
 
 			"display_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
 			"parent_management_group_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validate.ManagementGroupID,
 			},
 
 			"subscription_ids": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Optional: true,
 				Computed: true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type:         pluginsdk.TypeString,
 					ValidateFunc: validation.IsUUID,
 				},
-				Set: schema.HashString,
+				Set: pluginsdk.HashString,
 			},
 		},
 	}
 }
 
-func resourceManagementGroupCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceManagementGroupCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).ManagementGroups.GroupsClient
 	subscriptionsClient := meta.(*clients.Client).ManagementGroups.SubscriptionClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
@@ -165,7 +165,7 @@ func resourceManagementGroupCreateUpdate(d *schema.ResourceData, meta interface{
 			"succeeded",
 		},
 		Refresh:                   managementgroupCreateStateRefreshFunc(ctx, client, groupName),
-		Timeout:                   d.Timeout(schema.TimeoutCreate),
+		Timeout:                   d.Timeout(pluginsdk.TimeoutCreate),
 		ContinuousTargetOccurence: 5,
 	}
 
@@ -180,7 +180,7 @@ func resourceManagementGroupCreateUpdate(d *schema.ResourceData, meta interface{
 
 	d.SetId(*resp.ID)
 
-	subscriptionIds := expandManagementGroupSubscriptionIds(d.Get("subscription_ids").(*schema.Set))
+	subscriptionIds := expandManagementGroupSubscriptionIds(d.Get("subscription_ids").(*pluginsdk.Set))
 
 	// first remove any which need to be removed
 	if !d.IsNewResource() {
@@ -215,7 +215,7 @@ func resourceManagementGroupCreateUpdate(d *schema.ResourceData, meta interface{
 	return resourceManagementGroupRead(d, meta)
 }
 
-func resourceManagementGroupRead(d *schema.ResourceData, meta interface{}) error {
+func resourceManagementGroupRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).ManagementGroups.GroupsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -263,7 +263,7 @@ func resourceManagementGroupRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceManagementGroupDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceManagementGroupDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).ManagementGroups.GroupsClient
 	subscriptionsClient := meta.(*clients.Client).ManagementGroups.SubscriptionClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
@@ -322,7 +322,7 @@ func resourceManagementGroupDelete(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func expandManagementGroupSubscriptionIds(input *schema.Set) []string {
+func expandManagementGroupSubscriptionIds(input *pluginsdk.Set) []string {
 	output := make([]string, 0)
 
 	if input != nil {
@@ -334,8 +334,8 @@ func expandManagementGroupSubscriptionIds(input *schema.Set) []string {
 	return output
 }
 
-func flattenManagementGroupSubscriptionIds(input *[]managementgroups.ChildInfo) (*schema.Set, error) {
-	subscriptionIds := &schema.Set{F: schema.HashString}
+func flattenManagementGroupSubscriptionIds(input *[]managementgroups.ChildInfo) (*pluginsdk.Set, error) {
+	subscriptionIds := &pluginsdk.Set{F: pluginsdk.HashString}
 	if input == nil {
 		return subscriptionIds, nil
 	}

@@ -8,45 +8,45 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2021-01-01/storage"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 )
 
-func resourceStorageManagementPolicy() *schema.Resource {
-	return &schema.Resource{
+func resourceStorageManagementPolicy() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceStorageManagementPolicyCreateOrUpdate,
 		Read:   resourceStorageManagementPolicyRead,
 		Update: resourceStorageManagementPolicyCreateOrUpdate,
 		Delete: resourceStorageManagementPolicyDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"storage_account_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
 			"rule": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MinItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringMatch(
 								regexp.MustCompile(`^[a-zA-Z0-9]*$`),
@@ -54,62 +54,62 @@ func resourceStorageManagementPolicy() *schema.Resource {
 							),
 						},
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Required: true,
 						},
 						"filters": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"prefix_match": {
-										Type:     schema.TypeSet,
+										Type:     pluginsdk.TypeSet,
 										Optional: true,
-										Elem:     &schema.Schema{Type: schema.TypeString},
-										Set:      schema.HashString,
+										Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
+										Set:      pluginsdk.HashString,
 									},
 									"blob_types": {
-										Type:     schema.TypeSet,
+										Type:     pluginsdk.TypeSet,
 										Optional: true,
-										Elem: &schema.Schema{
-											Type: schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type: pluginsdk.TypeString,
 											ValidateFunc: validation.StringInSlice([]string{
 												"blockBlob",
 												"appendBlob",
 											}, false),
 										},
-										Set: schema.HashString,
+										Set: pluginsdk.HashString,
 									},
 								},
 							},
 						},
 						"actions": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Required: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"base_blob": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"tier_to_cool_after_days_since_modification_greater_than": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													Default:      nil,
 													ValidateFunc: validation.IntAtLeast(0),
 												},
 												"tier_to_archive_after_days_since_modification_greater_than": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													Default:      nil,
 													ValidateFunc: validation.IntAtLeast(0),
 												},
 												"delete_after_days_since_modification_greater_than": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													Default:      nil,
 													ValidateFunc: validation.IntAtLeast(0),
@@ -118,13 +118,13 @@ func resourceStorageManagementPolicy() *schema.Resource {
 										},
 									},
 									"snapshot": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"delete_after_days_since_creation_greater_than": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntAtLeast(0),
 												},
@@ -141,7 +141,7 @@ func resourceStorageManagementPolicy() *schema.Resource {
 	}
 }
 
-func resourceStorageManagementPolicyCreateOrUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageManagementPolicyCreateOrUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Storage.ManagementPoliciesClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -187,7 +187,7 @@ func resourceStorageManagementPolicyCreateOrUpdate(d *schema.ResourceData, meta 
 	return resourceStorageManagementPolicyRead(d, meta)
 }
 
-func resourceStorageManagementPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageManagementPolicyRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Storage.ManagementPoliciesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -222,7 +222,7 @@ func resourceStorageManagementPolicyRead(d *schema.ResourceData, meta interface{
 	return nil
 }
 
-func resourceStorageManagementPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageManagementPolicyDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Storage.ManagementPoliciesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -243,7 +243,7 @@ func resourceStorageManagementPolicyDelete(d *schema.ResourceData, meta interfac
 }
 
 // nolint unparam
-func expandStorageManagementPolicyRules(d *schema.ResourceData) (*[]storage.ManagementPolicyRule, error) {
+func expandStorageManagementPolicyRules(d *pluginsdk.ResourceData) (*[]storage.ManagementPolicyRule, error) {
 	var result []storage.ManagementPolicyRule
 
 	rules := d.Get("rule").([]interface{})
@@ -256,7 +256,7 @@ func expandStorageManagementPolicyRules(d *schema.ResourceData) (*[]storage.Mana
 	return &result, nil
 }
 
-func expandStorageManagementPolicyRule(d *schema.ResourceData, ruleIndex int) storage.ManagementPolicyRule {
+func expandStorageManagementPolicyRule(d *pluginsdk.ResourceData, ruleIndex int) storage.ManagementPolicyRule {
 	name := d.Get(fmt.Sprintf("rule.%d.name", ruleIndex)).(string)
 	enabled := d.Get(fmt.Sprintf("rule.%d.enabled", ruleIndex)).(bool)
 	typeVal := "Lifecycle"
@@ -271,7 +271,7 @@ func expandStorageManagementPolicyRule(d *schema.ResourceData, ruleIndex int) st
 			filterRef := filtersRef[0].(map[string]interface{})
 
 			prefixMatches := []string{}
-			prefixMatchesRef := filterRef["prefix_match"].(*schema.Set)
+			prefixMatchesRef := filterRef["prefix_match"].(*pluginsdk.Set)
 			if prefixMatchesRef != nil {
 				for _, prefixMatchRef := range prefixMatchesRef.List() {
 					prefixMatches = append(prefixMatches, prefixMatchRef.(string))
@@ -280,7 +280,7 @@ func expandStorageManagementPolicyRule(d *schema.ResourceData, ruleIndex int) st
 			definition.Filters.PrefixMatch = &prefixMatches
 
 			blobTypes := []string{}
-			blobTypesRef := filterRef["blob_types"].(*schema.Set)
+			blobTypesRef := filterRef["blob_types"].(*pluginsdk.Set)
 			if blobTypesRef != nil {
 				for _, blobTypeRef := range blobTypesRef.List() {
 					blobTypes = append(blobTypes, blobTypeRef.(string))

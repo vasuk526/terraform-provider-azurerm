@@ -8,31 +8,31 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/mediaservices/mgmt/2020-05-01/media"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/media/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceMediaServicesAccount() *schema.Resource {
-	return &schema.Resource{
+func resourceMediaServicesAccount() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceMediaServicesAccountCreateUpdate,
 		Read:   resourceMediaServicesAccountRead,
 		Update: resourceMediaServicesAccountCreateUpdate,
 		Delete: resourceMediaServicesAccountDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
@@ -40,9 +40,9 @@ func resourceMediaServicesAccount() *schema.Resource {
 			return err
 		}),
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringMatch(
@@ -56,18 +56,18 @@ func resourceMediaServicesAccount() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"storage_account": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: azure.ValidateResourceID,
 						},
 
 						"is_primary": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
@@ -76,24 +76,24 @@ func resourceMediaServicesAccount() *schema.Resource {
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"tenant_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"type": {
-							Type:             schema.TypeString,
+							Type:             pluginsdk.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: suppress.CaseDifference,
 							ValidateFunc: validation.StringInSlice([]string{
@@ -105,7 +105,7 @@ func resourceMediaServicesAccount() *schema.Resource {
 			},
 
 			"storage_authentication_type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -119,7 +119,7 @@ func resourceMediaServicesAccount() *schema.Resource {
 	}
 }
 
-func resourceMediaServicesAccountCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaServicesAccountCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ServicesClient
 	subscriptionId := meta.(*clients.Client).Account.SubscriptionId
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
@@ -142,7 +142,7 @@ func resourceMediaServicesAccountCreateUpdate(d *schema.ResourceData, meta inter
 	location := azure.NormalizeLocation(d.Get("location").(string))
 	t := d.Get("tags").(map[string]interface{})
 
-	storageAccountsRaw := d.Get("storage_account").(*schema.Set).List()
+	storageAccountsRaw := d.Get("storage_account").(*pluginsdk.Set).List()
 	storageAccounts, err := expandMediaServicesAccountStorageAccounts(storageAccountsRaw)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func resourceMediaServicesAccountCreateUpdate(d *schema.ResourceData, meta inter
 	return resourceMediaServicesAccountRead(d, meta)
 }
 
-func resourceMediaServicesAccountRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaServicesAccountRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ServicesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -214,7 +214,7 @@ func resourceMediaServicesAccountRead(d *schema.ResourceData, meta interface{}) 
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceMediaServicesAccountDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaServicesAccountDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ServicesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -286,7 +286,7 @@ func flattenMediaServicesAccountStorageAccounts(input *[]media.StorageAccount) [
 	return results
 }
 
-func expandAzureRmMediaServiceIdentity(d *schema.ResourceData) *media.ServiceIdentity {
+func expandAzureRmMediaServiceIdentity(d *pluginsdk.ResourceData) *media.ServiceIdentity {
 	identities := d.Get("identity").([]interface{})
 	identity := identities[0].(map[string]interface{})
 	identityType := identity["type"].(string)

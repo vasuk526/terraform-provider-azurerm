@@ -6,8 +6,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -17,38 +15,40 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network/parse"
 	networkValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceNetworkConnectionMonitor() *schema.Resource {
-	return &schema.Resource{
+func resourceNetworkConnectionMonitor() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceNetworkConnectionMonitorCreateUpdate,
 		Read:   resourceNetworkConnectionMonitorRead,
 		Update: resourceNetworkConnectionMonitorCreateUpdate,
 		Delete: resourceNetworkConnectionMonitorDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"network_watcher_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: networkValidate.NetworkWatcherID,
@@ -57,14 +57,14 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"auto_start": {
-				Type:       schema.TypeBool,
+				Type:       pluginsdk.TypeBool,
 				Optional:   true,
 				Computed:   true,
 				Deprecated: "The field belongs to the v1 network connection monitor, which is now deprecated in favour of v2 by Azure. Please check the document (https://www.terraform.io/docs/providers/azurerm/r/network_connection_monitor.html) for the v2 properties.",
 			},
 
 			"interval_in_seconds": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IntAtLeast(30),
@@ -72,15 +72,15 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			},
 
 			"source": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				Optional:   true,
 				Computed:   true,
 				MaxItems:   1,
 				Deprecated: "The field belongs to the v1 network connection monitor, which is now deprecated in favour of v2 by Azure. Please check the document (https://www.terraform.io/docs/providers/azurerm/r/network_connection_monitor.html) for the v2 properties.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"virtual_machine_id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							Computed:     true,
 							ValidateFunc: azure.ValidateResourceID,
@@ -88,7 +88,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"port": {
-							Type:         schema.TypeInt,
+							Type:         pluginsdk.TypeInt,
 							Optional:     true,
 							Computed:     true,
 							ValidateFunc: validate.PortNumberOrZero,
@@ -99,15 +99,15 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			},
 
 			"destination": {
-				Type:       schema.TypeList,
+				Type:       pluginsdk.TypeList,
 				Optional:   true,
 				Computed:   true,
 				MaxItems:   1,
 				Deprecated: "The field belongs to the v1 network connection monitor, which is now deprecated in favour of v2 by Azure. Please check the document (https://www.terraform.io/docs/providers/azurerm/r/network_connection_monitor.html) for the v2 properties.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"virtual_machine_id": {
-							Type:          schema.TypeString,
+							Type:          pluginsdk.TypeString,
 							Optional:      true,
 							Computed:      true,
 							ValidateFunc:  azure.ValidateResourceID,
@@ -116,7 +116,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"address": {
-							Type:          schema.TypeString,
+							Type:          pluginsdk.TypeString,
 							Optional:      true,
 							Computed:      true,
 							ConflictsWith: []string{"destination.0.virtual_machine_id"},
@@ -124,7 +124,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"port": {
-							Type:         schema.TypeInt,
+							Type:         pluginsdk.TypeInt,
 							Optional:     true,
 							Computed:     true,
 							ValidateFunc: validate.PortNumber,
@@ -135,18 +135,18 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			},
 
 			"endpoint": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"address": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Optional: true,
 							ValidateFunc: validation.Any(
 								validation.IsIPv4Address,
@@ -155,24 +155,24 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"filter": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"item": {
-										Type:     schema.TypeSet,
+										Type:     pluginsdk.TypeSet,
 										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"address": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Optional:     true,
 													ValidateFunc: azure.ValidateResourceID,
 												},
 
 												"type": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Optional: true,
 													Default:  string(network.AgentAddress),
 													ValidateFunc: validation.StringInSlice([]string{
@@ -184,7 +184,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 									},
 
 									"type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										Default:  string(network.Include),
 										ValidateFunc: validation.StringInSlice([]string{
@@ -196,7 +196,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"virtual_machine_id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: computeValidate.VirtualMachineID,
 						},
@@ -205,18 +205,18 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			},
 
 			"test_configuration": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"protocol": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(network.ConnectionMonitorTestConfigurationProtocolTCP),
@@ -226,13 +226,13 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"http_configuration": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"method": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										Default:  string(network.Get),
 										ValidateFunc: validation.StringInSlice([]string{
@@ -242,36 +242,36 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 									},
 
 									"path": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: networkValidate.NetworkConnectionMonitorHttpPath,
 									},
 
 									"port": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validate.PortNumber,
 									},
 
 									"prefer_https": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										Default:  false,
 									},
 
 									"request_header": {
-										Type:     schema.TypeSet,
+										Type:     pluginsdk.TypeSet,
 										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"name": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Required:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
 
 												"value": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Required:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
@@ -280,10 +280,10 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 									},
 
 									"valid_status_code_ranges": {
-										Type:     schema.TypeSet,
+										Type:     pluginsdk.TypeSet,
 										Optional: true,
-										Elem: &schema.Schema{
-											Type:         schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type:         pluginsdk.TypeString,
 											ValidateFunc: networkValidate.NetworkConnectionMonitorValidStatusCodeRanges,
 										},
 									},
@@ -292,13 +292,13 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"icmp_configuration": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"trace_route_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										Default:  true,
 									},
@@ -307,7 +307,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"preferred_ip_version": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Optional: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(network.PreferredIPVersionIPv4),
@@ -316,19 +316,19 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"success_threshold": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"checks_failed_percent": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntBetween(0, 100),
 									},
 
 									"round_trip_time_ms": {
-										Type:         schema.TypeFloat,
+										Type:         pluginsdk.TypeFloat,
 										Optional:     true,
 										ValidateFunc: validation.FloatAtLeast(0),
 									},
@@ -337,19 +337,19 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"tcp_configuration": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"port": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Required:     true,
 										ValidateFunc: validate.PortNumber,
 									},
 
 									"trace_route_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										Default:  true,
 									},
@@ -358,7 +358,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 						},
 
 						"test_frequency_in_seconds": {
-							Type:         schema.TypeInt,
+							Type:         pluginsdk.TypeInt,
 							Optional:     true,
 							Default:      60,
 							ValidateFunc: validation.IntBetween(30, 1800),
@@ -368,45 +368,45 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 			},
 
 			"test_group": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"destination_endpoints": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 
 						"source_endpoints": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 
 						"test_configuration_names": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  true,
 						},
@@ -416,17 +416,17 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 
 			// API accepts any value including empty string.
 			"notes": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 			},
 
 			"output_workspace_resource_ids": {
-				Type:       schema.TypeSet,
+				Type:       pluginsdk.TypeSet,
 				Optional:   true,
 				Computed:   true,
-				ConfigMode: schema.SchemaConfigModeAttr,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
+				ConfigMode: pluginsdk.SchemaConfigModeAttr,
+				Elem: &pluginsdk.Schema{
+					Type:         pluginsdk.TypeString,
 					ValidateFunc: logAnalyticsValidate.LogAnalyticsWorkspaceID,
 				},
 			},
@@ -436,7 +436,7 @@ func resourceNetworkConnectionMonitor() *schema.Resource {
 	}
 }
 
-func resourceNetworkConnectionMonitorCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkConnectionMonitorCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.ConnectionMonitorsClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -467,10 +467,10 @@ func resourceNetworkConnectionMonitorCreateUpdate(d *schema.ResourceData, meta i
 		Location: utils.String(location),
 		Tags:     tags.Expand(d.Get("tags").(map[string]interface{})),
 		ConnectionMonitorParameters: &network.ConnectionMonitorParameters{
-			Endpoints:          expandNetworkConnectionMonitorEndpoint(d.Get("endpoint").(*schema.Set).List()),
-			Outputs:            expandNetworkConnectionMonitorOutput(d.Get("output_workspace_resource_ids").(*schema.Set).List()),
-			TestConfigurations: expandNetworkConnectionMonitorTestConfiguration(d.Get("test_configuration").(*schema.Set).List()),
-			TestGroups:         expandNetworkConnectionMonitorTestGroup(d.Get("test_group").(*schema.Set).List()),
+			Endpoints:          expandNetworkConnectionMonitorEndpoint(d.Get("endpoint").(*pluginsdk.Set).List()),
+			Outputs:            expandNetworkConnectionMonitorOutput(d.Get("output_workspace_resource_ids").(*pluginsdk.Set).List()),
+			TestConfigurations: expandNetworkConnectionMonitorTestConfiguration(d.Get("test_configuration").(*pluginsdk.Set).List()),
+			TestGroups:         expandNetworkConnectionMonitorTestGroup(d.Get("test_group").(*pluginsdk.Set).List()),
 		},
 	}
 
@@ -500,7 +500,7 @@ func resourceNetworkConnectionMonitorCreateUpdate(d *schema.ResourceData, meta i
 	return resourceNetworkConnectionMonitorRead(d, meta)
 }
 
-func resourceNetworkConnectionMonitorRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkConnectionMonitorRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.ConnectionMonitorsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -555,7 +555,7 @@ func resourceNetworkConnectionMonitorRead(d *schema.ResourceData, meta interface
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceNetworkConnectionMonitorDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkConnectionMonitorDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.ConnectionMonitorsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -613,7 +613,7 @@ func expandNetworkConnectionMonitorEndpointFilter(input []interface{}) *network.
 
 	return &network.ConnectionMonitorEndpointFilter{
 		Type:  network.ConnectionMonitorEndpointFilterType(v["type"].(string)),
-		Items: expandNetworkConnectionMonitorEndpointFilterItem(v["item"].(*schema.Set).List()),
+		Items: expandNetworkConnectionMonitorEndpointFilterItem(v["item"].(*pluginsdk.Set).List()),
 	}
 }
 
@@ -677,7 +677,7 @@ func expandNetworkConnectionMonitorHTTPConfiguration(input []interface{}) *netwo
 	props := &network.ConnectionMonitorHTTPConfiguration{
 		Method:         network.HTTPConfigurationMethod(v["method"].(string)),
 		PreferHTTPS:    utils.Bool(v["prefer_https"].(bool)),
-		RequestHeaders: expandNetworkConnectionMonitorHTTPHeader(v["request_header"].(*schema.Set).List()),
+		RequestHeaders: expandNetworkConnectionMonitorHTTPHeader(v["request_header"].(*pluginsdk.Set).List()),
 	}
 
 	if path := v["path"]; path != "" {
@@ -688,7 +688,7 @@ func expandNetworkConnectionMonitorHTTPConfiguration(input []interface{}) *netwo
 		props.Port = utils.Int32(int32(port.(int)))
 	}
 
-	if ranges := v["valid_status_code_ranges"].(*schema.Set).List(); len(ranges) != 0 {
+	if ranges := v["valid_status_code_ranges"].(*pluginsdk.Set).List(); len(ranges) != 0 {
 		props.ValidStatusCodeRanges = utils.ExpandStringSlice(ranges)
 	}
 
@@ -762,10 +762,10 @@ func expandNetworkConnectionMonitorTestGroup(input []interface{}) *[]network.Con
 
 		result := network.ConnectionMonitorTestGroup{
 			Name:               utils.String(v["name"].(string)),
-			Destinations:       utils.ExpandStringSlice(v["destination_endpoints"].(*schema.Set).List()),
+			Destinations:       utils.ExpandStringSlice(v["destination_endpoints"].(*pluginsdk.Set).List()),
 			Disable:            utils.Bool(!v["enabled"].(bool)),
-			Sources:            utils.ExpandStringSlice(v["source_endpoints"].(*schema.Set).List()),
-			TestConfigurations: utils.ExpandStringSlice(v["test_configuration_names"].(*schema.Set).List()),
+			Sources:            utils.ExpandStringSlice(v["source_endpoints"].(*pluginsdk.Set).List()),
+			TestConfigurations: utils.ExpandStringSlice(v["test_configuration_names"].(*pluginsdk.Set).List()),
 		}
 
 		results = append(results, result)

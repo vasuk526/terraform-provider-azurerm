@@ -10,8 +10,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/redisenterprise/mgmt/2021-03-01/redisenterprise"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -19,13 +17,15 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/redisenterprise/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/redisenterprise/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceRedisEnterpriseCluster() *schema.Resource {
-	return &schema.Resource{
+func resourceRedisEnterpriseCluster() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceRedisEnterpriseClusterCreate,
 		Read:   resourceRedisEnterpriseClusterRead,
 		Delete: resourceRedisEnterpriseClusterDelete,
@@ -34,15 +34,15 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.RedisEnterpriseName,
@@ -51,7 +51,7 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"location": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.RedisEnterpriseClusterLocation,
@@ -59,19 +59,19 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			},
 
 			"sku_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.RedisEnterpriseClusterSkuName,
 			},
 
 			"zones": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MinItems: 1,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 					ValidateFunc: validation.StringInSlice([]string{
 						"1",
 						"2",
@@ -83,7 +83,7 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			// RP currently does not return this value, but will in the near future (RP defaults to 1.2)
 			// https://github.com/Azure/azure-sdk-for-go/issues/14420
 			// "minimum_tls_version": {
-			// 	Type:     schema.TypeString,
+			// 	Type:     pluginsdk.TypeString,
 			// 	Optional: true,
 			// 	Default:  string(redisenterprise.OneFullStopTwo),
 			// 	ValidateFunc: validation.StringInSlice([]string{
@@ -96,7 +96,7 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			// RP currently does not return this value, but will in the near future
 			// https://github.com/Azure/azure-sdk-for-go/issues/14420
 			"hostname": {
-				Type:       schema.TypeString,
+				Type:       pluginsdk.TypeString,
 				Computed:   true,
 				Deprecated: "This field currently is not yet being returned from the service API, please see https://github.com/Azure/azure-sdk-for-go/issues/14420 for more information",
 			},
@@ -104,7 +104,7 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 			// RP currently does not return this value, but will in the near future
 			// https://github.com/Azure/azure-sdk-for-go/issues/14420
 			"version": {
-				Type:       schema.TypeString,
+				Type:       pluginsdk.TypeString,
 				Computed:   true,
 				Deprecated: "This field currently is not yet being returned from the service API, please see https://github.com/Azure/azure-sdk-for-go/issues/14420 for more information",
 			},
@@ -114,7 +114,7 @@ func resourceRedisEnterpriseCluster() *schema.Resource {
 	}
 }
 
-func resourceRedisEnterpriseClusterCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceRedisEnterpriseClusterCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).RedisEnterprise.Client
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -182,7 +182,7 @@ func resourceRedisEnterpriseClusterCreate(d *schema.ResourceData, meta interface
 		Target:     []string{"Running"},
 		Refresh:    redisEnterpriseClusterStateRefreshFunc(ctx, client, resourceId),
 		MinTimeout: 15 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(pluginsdk.TimeoutCreate),
 	}
 
 	if _, err = stateConf.WaitForState(); err != nil {
@@ -194,7 +194,7 @@ func resourceRedisEnterpriseClusterCreate(d *schema.ResourceData, meta interface
 	return resourceRedisEnterpriseClusterRead(d, meta)
 }
 
-func resourceRedisEnterpriseClusterRead(d *schema.ResourceData, meta interface{}) error {
+func resourceRedisEnterpriseClusterRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).RedisEnterprise.Client
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -237,7 +237,7 @@ func resourceRedisEnterpriseClusterRead(d *schema.ResourceData, meta interface{}
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceRedisEnterpriseClusterDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceRedisEnterpriseClusterDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).RedisEnterprise.Client
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

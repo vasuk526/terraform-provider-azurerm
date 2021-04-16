@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
 func TestAccAzureRMServiceBusNamespaceMigrateState(t *testing.T) {
@@ -99,7 +99,7 @@ func TestAccAzureRMServiceBusNamespaceMigrateState(t *testing.T) {
 	}
 
 	for tn, tc := range cases {
-		is := &terraform.InstanceState{
+		is := &pluginsdk.InstanceState{
 			ID:         tc.ID,
 			Attributes: tc.Attributes,
 		}

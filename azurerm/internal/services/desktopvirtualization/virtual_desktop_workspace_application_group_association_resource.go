@@ -7,29 +7,29 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/desktopvirtualization/mgmt/2019-12-10-preview/desktopvirtualization"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/locks"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/desktopvirtualization/migration"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/desktopvirtualization/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/desktopvirtualization/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceVirtualDesktopWorkspaceApplicationGroupAssociation() *schema.Resource {
-	return &schema.Resource{
+func resourceVirtualDesktopWorkspaceApplicationGroupAssociation() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceVirtualDesktopWorkspaceApplicationGroupAssociationCreate,
 		Read:   resourceVirtualDesktopWorkspaceApplicationGroupAssociationRead,
 		Delete: resourceVirtualDesktopWorkspaceApplicationGroupAssociationDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
@@ -38,7 +38,7 @@ func resourceVirtualDesktopWorkspaceApplicationGroupAssociation() *schema.Resour
 		}),
 
 		SchemaVersion: 1,
-		StateUpgraders: []schema.StateUpgrader{
+		StateUpgraders: []pluginsdk.StateUpgrader{
 			{
 				Type:    migration.WorkspaceApplicationGroupAssociationUpgradeV0Schema().CoreConfigSchema().ImpliedType(),
 				Upgrade: migration.WorkspaceApplicationGroupAssociationUpgradeV0ToV1,
@@ -46,16 +46,16 @@ func resourceVirtualDesktopWorkspaceApplicationGroupAssociation() *schema.Resour
 			},
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"workspace_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.WorkspaceID,
 			},
 
 			"application_group_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ApplicationGroupID,
@@ -64,7 +64,7 @@ func resourceVirtualDesktopWorkspaceApplicationGroupAssociation() *schema.Resour
 	}
 }
 
-func resourceVirtualDesktopWorkspaceApplicationGroupAssociationCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualDesktopWorkspaceApplicationGroupAssociationCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).DesktopVirtualization.WorkspacesClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -116,7 +116,7 @@ func resourceVirtualDesktopWorkspaceApplicationGroupAssociationCreate(d *schema.
 	return resourceVirtualDesktopWorkspaceApplicationGroupAssociationRead(d, meta)
 }
 
-func resourceVirtualDesktopWorkspaceApplicationGroupAssociationRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualDesktopWorkspaceApplicationGroupAssociationRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).DesktopVirtualization.WorkspacesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -151,7 +151,7 @@ func resourceVirtualDesktopWorkspaceApplicationGroupAssociationRead(d *schema.Re
 	return nil
 }
 
-func resourceVirtualDesktopWorkspaceApplicationGroupAssociationDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualDesktopWorkspaceApplicationGroupAssociationDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).DesktopVirtualization.WorkspacesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

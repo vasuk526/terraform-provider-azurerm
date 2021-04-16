@@ -7,16 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/2017-03-09/resources/mgmt/resources"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/resourceproviders"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/sdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/resource/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/resource/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -29,10 +27,10 @@ type ResourceProviderRegistrationModel struct {
 	Name string `tfschema:"name"`
 }
 
-func (r ResourceProviderRegistrationResource) Arguments() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+func (r ResourceProviderRegistrationResource) Arguments() map[string]*pluginsdk.Schema {
+	return map[string]*pluginsdk.Schema{
 		"name": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: resourceproviders.EnhancedValidate,
@@ -40,8 +38,8 @@ func (r ResourceProviderRegistrationResource) Arguments() map[string]*schema.Sch
 	}
 }
 
-func (r ResourceProviderRegistrationResource) Attributes() map[string]*schema.Schema {
-	return map[string]*schema.Schema{}
+func (r ResourceProviderRegistrationResource) Attributes() map[string]*pluginsdk.Schema {
+	return map[string]*pluginsdk.Schema{}
 }
 
 func (r ResourceProviderRegistrationResource) ModelObject() interface{} {
@@ -97,7 +95,7 @@ func (r ResourceProviderRegistrationResource) Create() sdk.ResourceFunc {
 				Refresh:      r.registerRefreshFunc(ctx, client, resourceId.ResourceProvider),
 				MinTimeout:   15 * time.Second,
 				PollInterval: 30 * time.Second,
-				Timeout:      metadata.ResourceData.Timeout(schema.TimeoutCreate),
+				Timeout:      metadata.ResourceData.Timeout(pluginsdk.TimeoutCreate),
 			}
 			if _, err := stateConf.WaitForState(); err != nil {
 				return fmt.Errorf("waiting for Resource Provider Namespace %q to be registered: %s", resourceId.ResourceProvider, err)
@@ -174,7 +172,7 @@ func (r ResourceProviderRegistrationResource) Delete() sdk.ResourceFunc {
 				Target:     []string{"Unregistered"},
 				Refresh:    r.unregisterRefreshFunc(ctx, client, id.ResourceProvider),
 				MinTimeout: 15 * time.Second,
-				Timeout:    metadata.ResourceData.Timeout(schema.TimeoutDelete),
+				Timeout:    metadata.ResourceData.Timeout(pluginsdk.TimeoutDelete),
 			}
 			if _, err := stateConf.WaitForState(); err != nil {
 				return fmt.Errorf("waiting for Resource Provider %q to become unregistered: %+v", id.ResourceProvider, err)

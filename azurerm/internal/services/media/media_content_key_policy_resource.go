@@ -12,29 +12,29 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/mediaservices/mgmt/2020-05-01/media"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/gofrs/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/media/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceMediaContentKeyPolicy() *schema.Resource {
-	return &schema.Resource{
+func resourceMediaContentKeyPolicy() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceMediaContentKeyPolicyCreateUpdate,
 		Read:   resourceMediaContentKeyPolicyRead,
 		Update: resourceMediaContentKeyPolicyCreateUpdate,
 		Delete: resourceMediaContentKeyPolicyDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
@@ -42,9 +42,9 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 			return err
 		}),
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringMatch(
@@ -56,70 +56,70 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"media_services_account_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateMediaServicesAccountName,
 			},
 
 			"description": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"policy_option": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Required: true,
 				MinItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"clear_key_configuration_enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 						},
 
 						"widevine_configuration_template": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"playready_configuration_license": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"allow_test_devices": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 
 									"begin_date": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.IsRFC3339Time,
 									},
 
 									"content_key_location_from_header_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 
 									"content_key_location_from_key_id": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.IsUUID,
 									},
 
 									"content_type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(media.ContentKeyPolicyPlayReadyContentTypeUltraVioletDownload),
@@ -129,20 +129,20 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 									},
 
 									"expiration_date": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.IsRFC3339Time,
 									},
 
 									"grace_period": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										Sensitive:    true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"license_type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(media.ContentKeyPolicyPlayReadyLicenseTypeNonPersistent),
@@ -151,19 +151,19 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 									},
 
 									"play_right": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"agc_and_color_stripe_restriction": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntBetween(0, 3),
 												},
 
 												"allow_passing_video_content_to_unknown_output": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Optional: true,
 													ValidateFunc: validation.StringInSlice([]string{
 														string(media.ContentKeyPolicyPlayReadyUnknownOutputPassingOptionAllowed),
@@ -173,52 +173,52 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 												},
 
 												"analog_video_opl": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntInSlice([]int{100, 150, 200}),
 												},
 
 												"compressed_digital_audio_opl": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntInSlice([]int{100, 150, 200}),
 												},
 
 												"digital_video_only_content_restriction": {
-													Type:     schema.TypeBool,
+													Type:     pluginsdk.TypeBool,
 													Optional: true,
 												},
 
 												"first_play_expiration": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Optional:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
 
 												"image_constraint_for_analog_component_video_restriction": {
-													Type:     schema.TypeBool,
+													Type:     pluginsdk.TypeBool,
 													Optional: true,
 												},
 
 												"image_constraint_for_analog_computer_monitor_restriction": {
-													Type:     schema.TypeBool,
+													Type:     pluginsdk.TypeBool,
 													Optional: true,
 												},
 
 												"scms_restriction": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntBetween(0, 3),
 												},
 
 												"uncompressed_digital_audio_opl": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntInSlice([]int{100, 150, 250, 300}),
 												},
 
 												"uncompressed_digital_video_opl": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntInSlice([]int{100, 250, 270, 300}),
 												},
@@ -226,13 +226,13 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 										},
 									},
 									"relative_begin_date": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.IsRFC3339Time,
 									},
 
 									"relative_expiration_date": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.IsRFC3339Time,
 									},
@@ -240,42 +240,42 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 							},
 						},
 						"fairplay_configuration": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"ask": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										Sensitive:    true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"pfx": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										Sensitive:    true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"pfx_password": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										Sensitive:    true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"offline_rental_configuration": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										MaxItems: 1,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"playback_duration_seconds": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntAtLeast(1),
 												},
 												"storage_duration_seconds": {
-													Type:         schema.TypeInt,
+													Type:         pluginsdk.TypeInt,
 													Optional:     true,
 													ValidateFunc: validation.IntAtLeast(1),
 												},
@@ -283,7 +283,7 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 										},
 									},
 									"rental_and_lease_key_type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(media.DualExpiry),
@@ -293,7 +293,7 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 										}, false),
 									},
 									"rental_duration_seconds": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntAtLeast(1),
 									},
@@ -301,23 +301,23 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 							},
 						},
 						"token_restriction": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"audience": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"issuer": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"token_type": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(media.ContentKeyPolicyRestrictionTokenTypeJwt),
@@ -325,46 +325,46 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 										}, false),
 									},
 									"primary_symmetric_token_key": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsBase64,
 										Sensitive:    true,
 									},
 									"primary_rsa_token_key_exponent": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 										Sensitive:    true,
 									},
 									"primary_rsa_token_key_modulus": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 										Sensitive:    true,
 									},
 									"primary_x509_token_key_raw": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 										Sensitive:    true,
 									},
 									"open_id_connect_discovery_document": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"required_claim": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"type": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Optional:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
 												"value": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Optional:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
@@ -375,7 +375,7 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 							},
 						},
 						"open_restriction_enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 						},
 					},
@@ -385,7 +385,7 @@ func resourceMediaContentKeyPolicy() *schema.Resource {
 	}
 }
 
-func resourceMediaContentKeyPolicyCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaContentKeyPolicyCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ContentKeyPoliciesClient
 	subscriptionID := meta.(*clients.Client).Account.SubscriptionId
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
@@ -413,7 +413,7 @@ func resourceMediaContentKeyPolicyCreateUpdate(d *schema.ResourceData, meta inte
 	}
 
 	if v, ok := d.GetOk("policy_option"); ok {
-		options, err := expandPolicyOptions(v.(*schema.Set).List())
+		options, err := expandPolicyOptions(v.(*pluginsdk.Set).List())
 		if err != nil {
 			return err
 		}
@@ -430,7 +430,7 @@ func resourceMediaContentKeyPolicyCreateUpdate(d *schema.ResourceData, meta inte
 	return resourceMediaContentKeyPolicyRead(d, meta)
 }
 
-func resourceMediaContentKeyPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaContentKeyPolicyRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ContentKeyPoliciesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -467,7 +467,7 @@ func resourceMediaContentKeyPolicyRead(d *schema.ResourceData, meta interface{})
 	return nil
 }
 
-func resourceMediaContentKeyPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMediaContentKeyPolicyDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Media.ContentKeyPoliciesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

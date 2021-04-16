@@ -9,8 +9,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/cognitiveservices/mgmt/2017-04-18/cognitiveservices"
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	commonValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -21,24 +19,26 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network"
 	networkParse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/set"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceCognitiveAccount() *schema.Resource {
-	return &schema.Resource{
+func resourceCognitiveAccount() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceCognitiveAccountCreate,
 		Read:   resourceCognitiveAccountRead,
 		Update: resourceCognitiveAccountUpdate,
 		Delete: resourceCognitiveAccountDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
@@ -46,9 +46,9 @@ func resourceCognitiveAccount() *schema.Resource {
 			return err
 		}),
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.CognitiveServicesAccountName(),
@@ -59,7 +59,7 @@ func resourceCognitiveAccount() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"kind": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -99,7 +99,7 @@ func resourceCognitiveAccount() *schema.Resource {
 			},
 
 			"sku_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"F0", "F1", "S0", "S", "S1", "S2", "S3", "S4", "S5", "S6", "P0", "P1", "P2",
@@ -107,20 +107,20 @@ func resourceCognitiveAccount() *schema.Resource {
 			},
 
 			"qna_runtime_endpoint": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 			},
 
 			"network_acls": {
-				Type:         schema.TypeList,
+				Type:         pluginsdk.TypeList,
 				Optional:     true,
 				MaxItems:     1,
 				RequiredWith: []string{"custom_subdomain_name"},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"default_action": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(cognitiveservices.Allow),
@@ -128,10 +128,10 @@ func resourceCognitiveAccount() *schema.Resource {
 							}, false),
 						},
 						"ip_rules": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 								ValidateFunc: validation.Any(
 									commonValidate.IPv4Address,
 									commonValidate.CIDR,
@@ -140,16 +140,16 @@ func resourceCognitiveAccount() *schema.Resource {
 							Set: set.HashIPv4AddressOrCIDR,
 						},
 						"virtual_network_subnet_ids": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 						},
 					},
 				},
 			},
 
 			"custom_subdomain_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -158,18 +158,18 @@ func resourceCognitiveAccount() *schema.Resource {
 			"tags": tags.Schema(),
 
 			"endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_access_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"secondary_access_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
@@ -177,7 +177,7 @@ func resourceCognitiveAccount() *schema.Resource {
 	}
 }
 
-func resourceCognitiveAccountCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCognitiveAccountCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cognitive.AccountsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -250,7 +250,7 @@ func resourceCognitiveAccountCreate(d *schema.ResourceData, meta interface{}) er
 		Target:     []string{"Succeeded"},
 		Refresh:    cognitiveAccountStateRefreshFunc(ctx, client, resourceGroup, name),
 		MinTimeout: 15 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(pluginsdk.TimeoutCreate),
 	}
 
 	if _, err = stateConf.WaitForState(); err != nil {
@@ -267,7 +267,7 @@ func resourceCognitiveAccountCreate(d *schema.ResourceData, meta interface{}) er
 	return resourceCognitiveAccountRead(d, meta)
 }
 
-func resourceCognitiveAccountUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceCognitiveAccountUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cognitive.AccountsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -326,7 +326,7 @@ func resourceCognitiveAccountUpdate(d *schema.ResourceData, meta interface{}) er
 		Target:     []string{"Succeeded"},
 		Refresh:    cognitiveAccountStateRefreshFunc(ctx, client, id.ResourceGroup, id.Name),
 		MinTimeout: 15 * time.Second,
-		Timeout:    d.Timeout(schema.TimeoutCreate),
+		Timeout:    d.Timeout(pluginsdk.TimeoutCreate),
 	}
 
 	if _, err = stateConf.WaitForState(); err != nil {
@@ -336,7 +336,7 @@ func resourceCognitiveAccountUpdate(d *schema.ResourceData, meta interface{}) er
 	return resourceCognitiveAccountRead(d, meta)
 }
 
-func resourceCognitiveAccountRead(d *schema.ResourceData, meta interface{}) error {
+func resourceCognitiveAccountRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cognitive.AccountsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -395,7 +395,7 @@ func resourceCognitiveAccountRead(d *schema.ResourceData, meta interface{}) erro
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceCognitiveAccountDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCognitiveAccountDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cognitive.AccountsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -455,7 +455,7 @@ func expandCognitiveAccountNetworkAcls(input []interface{}) (*cognitiveservices.
 
 	defaultAction := v["default_action"].(string)
 
-	ipRulesRaw := v["ip_rules"].(*schema.Set)
+	ipRulesRaw := v["ip_rules"].(*pluginsdk.Set)
 	ipRules := make([]cognitiveservices.IPRule, 0)
 
 	for _, v := range ipRulesRaw.List() {
@@ -465,7 +465,7 @@ func expandCognitiveAccountNetworkAcls(input []interface{}) (*cognitiveservices.
 		ipRules = append(ipRules, rule)
 	}
 
-	networkRulesRaw := v["virtual_network_subnet_ids"].(*schema.Set)
+	networkRulesRaw := v["virtual_network_subnet_ids"].(*pluginsdk.Set)
 	networkRules := make([]cognitiveservices.VirtualNetworkRule, 0)
 	for _, v := range networkRulesRaw.List() {
 		rawId := v.(string)
@@ -503,7 +503,7 @@ func flattenCognitiveAccountNetworkAcls(input *cognitiveservices.NetworkRuleSet)
 			ipRules = append(ipRules, *v.Value)
 		}
 	}
-	output["ip_rules"] = schema.NewSet(schema.HashString, ipRules)
+	output["ip_rules"] = pluginsdk.NewSet(pluginsdk.HashString, ipRules)
 
 	virtualNetworkRules := make([]interface{}, 0)
 	if input.VirtualNetworkRules != nil {
@@ -521,7 +521,7 @@ func flattenCognitiveAccountNetworkAcls(input *cognitiveservices.NetworkRuleSet)
 			virtualNetworkRules = append(virtualNetworkRules, id)
 		}
 	}
-	output["virtual_network_subnet_ids"] = schema.NewSet(schema.HashString, virtualNetworkRules)
+	output["virtual_network_subnet_ids"] = pluginsdk.NewSet(pluginsdk.HashString, virtualNetworkRules)
 
 	return []interface{}{output}
 }

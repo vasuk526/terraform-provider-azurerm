@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/compute/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 )
 
-func importOrchestratedVirtualMachineScaleSet(d *schema.ResourceData, meta interface{}) (data []*schema.ResourceData, err error) {
+func importOrchestratedVirtualMachineScaleSet(d *pluginsdk.ResourceData, meta interface{}) (data []*pluginsdk.ResourceData, err error) {
 	id, err := parse.VirtualMachineScaleSetID(d.Id())
 	if err != nil {
-		return []*schema.ResourceData{}, err
+		return []*pluginsdk.ResourceData{}, err
 	}
 
 	client := meta.(*clients.Client).Compute.VMScaleSetClient
@@ -22,14 +22,14 @@ func importOrchestratedVirtualMachineScaleSet(d *schema.ResourceData, meta inter
 
 	vm, err := client.Get(ctx, id.ResourceGroup, id.Name)
 	if err != nil {
-		return []*schema.ResourceData{}, fmt.Errorf("retrieving Virtual Machine Scale Set %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
+		return []*pluginsdk.ResourceData{}, fmt.Errorf("retrieving Virtual Machine Scale Set %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
 	}
 
 	if err := assertOrchestratedVirtualMachineScaleSet(vm); err != nil {
-		return []*schema.ResourceData{}, fmt.Errorf("importing Virtual Machine Scale Set Orchestrator VM %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
+		return []*pluginsdk.ResourceData{}, fmt.Errorf("importing Virtual Machine Scale Set Orchestrator VM %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
 	}
 
-	return []*schema.ResourceData{d}, nil
+	return []*pluginsdk.ResourceData{d}, nil
 }
 
 func assertOrchestratedVirtualMachineScaleSet(resp compute.VirtualMachineScaleSet) error {
@@ -44,11 +44,11 @@ func assertOrchestratedVirtualMachineScaleSet(resp compute.VirtualMachineScaleSe
 	return nil
 }
 
-func importVirtualMachineScaleSet(osType compute.OperatingSystemTypes, resourceType string) func(d *schema.ResourceData, meta interface{}) (data []*schema.ResourceData, err error) {
-	return func(d *schema.ResourceData, meta interface{}) (data []*schema.ResourceData, err error) {
+func importVirtualMachineScaleSet(osType compute.OperatingSystemTypes, resourceType string) func(d *pluginsdk.ResourceData, meta interface{}) (data []*pluginsdk.ResourceData, err error) {
+	return func(d *pluginsdk.ResourceData, meta interface{}) (data []*pluginsdk.ResourceData, err error) {
 		id, err := parse.VirtualMachineScaleSetID(d.Id())
 		if err != nil {
-			return []*schema.ResourceData{}, err
+			return []*pluginsdk.ResourceData{}, err
 		}
 
 		client := meta.(*clients.Client).Compute.VMScaleSetClient
@@ -57,19 +57,19 @@ func importVirtualMachineScaleSet(osType compute.OperatingSystemTypes, resourceT
 
 		vm, err := client.Get(ctx, id.ResourceGroup, id.Name)
 		if err != nil {
-			return []*schema.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
+			return []*pluginsdk.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
 		}
 
 		if vm.VirtualMachineScaleSetProperties == nil {
-			return []*schema.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties` was nil", id.Name, id.ResourceGroup)
+			return []*pluginsdk.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties` was nil", id.Name, id.ResourceGroup)
 		}
 
 		if vm.VirtualMachineScaleSetProperties.VirtualMachineProfile == nil {
-			return []*schema.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties.virtualMachineProfile` was nil", id.Name, id.ResourceGroup)
+			return []*pluginsdk.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties.virtualMachineProfile` was nil", id.Name, id.ResourceGroup)
 		}
 
 		if vm.VirtualMachineScaleSetProperties.VirtualMachineProfile.OsProfile == nil {
-			return []*schema.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties.virtualMachineProfile.osProfile` was nil", id.Name, id.ResourceGroup)
+			return []*pluginsdk.ResourceData{}, fmt.Errorf("Error retrieving Virtual Machine Scale Set %q (Resource Group %q): `properties.virtualMachineProfile.osProfile` was nil", id.Name, id.ResourceGroup)
 		}
 
 		isCorrectOS := false
@@ -89,7 +89,7 @@ func importVirtualMachineScaleSet(osType compute.OperatingSystemTypes, resourceT
 		}
 
 		if !isCorrectOS {
-			return []*schema.ResourceData{}, fmt.Errorf("The %q resource only supports %s Virtual Machine Scale Sets", resourceType, string(osType))
+			return []*pluginsdk.ResourceData{}, fmt.Errorf("The %q resource only supports %s Virtual Machine Scale Sets", resourceType, string(osType))
 		}
 
 		if !hasSshKeys {
@@ -104,12 +104,12 @@ func importVirtualMachineScaleSet(osType compute.OperatingSystemTypes, resourceT
 				}
 				updatedExtensions, err = flattenVirtualMachineScaleSetExtensions(extensionsProfile, d)
 				if err != nil {
-					return []*schema.ResourceData{}, fmt.Errorf("could not read VMSS extensions data for %q (resource group %q)", id.Name, id.ResourceGroup)
+					return []*pluginsdk.ResourceData{}, fmt.Errorf("could not read VMSS extensions data for %q (resource group %q)", id.Name, id.ResourceGroup)
 				}
 			}
 		}
 		d.Set("extension", updatedExtensions)
 
-		return []*schema.ResourceData{d}, nil
+		return []*pluginsdk.ResourceData{d}, nil
 	}
 }

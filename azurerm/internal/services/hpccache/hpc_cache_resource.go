@@ -9,38 +9,38 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
 
 	"github.com/Azure/azure-sdk-for-go/services/storagecache/mgmt/2021-03-01/storagecache"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hpccache/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceHPCCache() *schema.Resource {
-	return &schema.Resource{
+func resourceHPCCache() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceHPCCacheCreateOrUpdate,
 		Update: resourceHPCCacheCreateOrUpdate,
 		Read:   resourceHPCCacheRead,
 		Delete: resourceHPCCacheDelete,
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 		Importer: azSchema.ValidateResourceIDPriorToImport(func(id string) error {
 			_, err := parse.CacheID(id)
 			return err
 		}),
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -51,7 +51,7 @@ func resourceHPCCache() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"cache_size_in_gb": {
-				Type:     schema.TypeInt,
+				Type:     pluginsdk.TypeInt,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.IntInSlice([]int{
@@ -64,14 +64,14 @@ func resourceHPCCache() *schema.Resource {
 			},
 
 			"subnet_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceIDOrEmpty,
 			},
 
 			"sku_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -82,37 +82,37 @@ func resourceHPCCache() *schema.Resource {
 			},
 
 			"mtu": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Default:      1500,
 				ValidateFunc: validation.IntBetween(576, 1500),
 			},
 
 			"ntp_server": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Default:      "time.windows.com",
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"dns": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"servers": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Required: true,
 							MaxItems: 3,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validation.IsIPAddress,
 							},
 						},
 
 						"search_domain": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
@@ -122,30 +122,30 @@ func resourceHPCCache() *schema.Resource {
 
 			// TODO 3.0: remove this property
 			"root_squash_enabled": {
-				Type:       schema.TypeBool,
+				Type:       pluginsdk.TypeBool,
 				Optional:   true,
 				Computed:   true,
 				Deprecated: "This property is not functional and will be deprecated in favor of `default_access_policy.0.access_rule.x.root_squash_enabled`, where the scope of access_rule is `default`.",
 			},
 
 			"default_access_policy": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				MinItems: 1,
 				MaxItems: 1,
 				Optional: true,
 				// This is computed because there is always a "default" policy in the cache. It is created together with the cache, and users can't remove it.
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"access_rule": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Required: true,
 							MinItems: 1,
 							MaxItems: 3,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"scope": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(storagecache.Default),
@@ -155,7 +155,7 @@ func resourceHPCCache() *schema.Resource {
 									},
 
 									"access": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(storagecache.NfsAccessRuleAccessRw),
@@ -165,34 +165,34 @@ func resourceHPCCache() *schema.Resource {
 									},
 
 									"filter": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"suid_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 
 									"submount_access_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 
 									"root_squash_enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 
 									"anonymous_uid": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntAtLeast(0),
 									},
 
 									"anonymous_gid": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntAtLeast(0),
 									},
@@ -204,9 +204,9 @@ func resourceHPCCache() *schema.Resource {
 			},
 
 			"mount_addresses": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 			},
 
 			"tags": tags.Schema(),
@@ -214,7 +214,7 @@ func resourceHPCCache() *schema.Resource {
 	}
 }
 
-func resourceHPCCacheCreateOrUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceHPCCacheCreateOrUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).HPCCache.CachesClient
 	subscriptionId := meta.(*clients.Client).Account.SubscriptionId
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
@@ -305,7 +305,7 @@ func resourceHPCCacheCreateOrUpdate(d *schema.ResourceData, meta interface{}) er
 	return resourceHPCCacheRead(d, meta)
 }
 
-func resourceHPCCacheRead(d *schema.ResourceData, meta interface{}) error {
+func resourceHPCCacheRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).HPCCache.CachesClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -370,7 +370,7 @@ func resourceHPCCacheRead(d *schema.ResourceData, meta interface{}) error {
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceHPCCacheDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceHPCCacheDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).HPCCache.CachesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -399,7 +399,7 @@ func expandStorageCacheDefaultAccessPolicy(input []interface{}) *storagecache.Nf
 
 	return &storagecache.NfsAccessPolicy{
 		Name:        utils.String("default"),
-		AccessRules: expandStorageCacheNfsAccessRules(input[0].(map[string]interface{})["access_rule"].(*schema.Set).List()),
+		AccessRules: expandStorageCacheNfsAccessRules(input[0].(map[string]interface{})["access_rule"].(*pluginsdk.Set).List()),
 	}
 }
 
@@ -494,7 +494,7 @@ func flattenStorageCacheNfsAccessRules(input *[]storagecache.NfsAccessRule) ([]i
 	return rules, nil
 }
 
-func expandStorageCacheNetworkSettings(d *schema.ResourceData) *storagecache.CacheNetworkSettings {
+func expandStorageCacheNetworkSettings(d *pluginsdk.ResourceData) *storagecache.CacheNetworkSettings {
 	out := &storagecache.CacheNetworkSettings{
 		Mtu:       utils.Int32(int32(d.Get("mtu").(int))),
 		NtpServer: utils.String(d.Get("ntp_server").(string)),

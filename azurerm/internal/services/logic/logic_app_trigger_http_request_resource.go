@@ -8,30 +8,30 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/structure"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 )
 
-func resourceLogicAppTriggerHttpRequest() *schema.Resource {
-	return &schema.Resource{
+func resourceLogicAppTriggerHttpRequest() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceLogicAppTriggerHttpRequestCreateUpdate,
 		Read:   resourceLogicAppTriggerHttpRequestRead,
 		Update: resourceLogicAppTriggerHttpRequestCreateUpdate,
 		Delete: resourceLogicAppTriggerHttpRequestDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		CustomizeDiff: func(diff *schema.ResourceDiff, v interface{}) error {
+		CustomizeDiff: func(diff *pluginsdk.ResourceDiff, v interface{}) error {
 			relativePath := diff.Get("relative_path").(string)
 			if relativePath != "" {
 				method := diff.Get("method").(string)
@@ -43,29 +43,29 @@ func resourceLogicAppTriggerHttpRequest() *schema.Resource {
 			return nil
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"logic_app_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
 
 			"schema": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Required:         true,
 				ValidateFunc:     validation.StringIsJSON,
 				DiffSuppressFunc: structure.SuppressJsonDiff,
 			},
 
 			"method": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					http.MethodDelete,
@@ -77,7 +77,7 @@ func resourceLogicAppTriggerHttpRequest() *schema.Resource {
 			},
 
 			"relative_path": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validateLogicAppTriggerHttpRequestRelativePath,
 			},
@@ -85,7 +85,7 @@ func resourceLogicAppTriggerHttpRequest() *schema.Resource {
 	}
 }
 
-func resourceLogicAppTriggerHttpRequestCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceLogicAppTriggerHttpRequestCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	schemaRaw := d.Get("schema").(string)
 	var schema map[string]interface{}
 	if err := json.Unmarshal([]byte(schemaRaw), &schema); err != nil {
@@ -119,7 +119,7 @@ func resourceLogicAppTriggerHttpRequestCreateUpdate(d *schema.ResourceData, meta
 	return resourceLogicAppTriggerHttpRequestRead(d, meta)
 }
 
-func resourceLogicAppTriggerHttpRequestRead(d *schema.ResourceData, meta interface{}) error {
+func resourceLogicAppTriggerHttpRequestRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	id, err := azure.ParseAzureResourceID(d.Id())
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func resourceLogicAppTriggerHttpRequestRead(d *schema.ResourceData, meta interfa
 	return nil
 }
 
-func resourceLogicAppTriggerHttpRequestDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceLogicAppTriggerHttpRequestDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	id, err := azure.ParseAzureResourceID(d.Id())
 	if err != nil {
 		return err

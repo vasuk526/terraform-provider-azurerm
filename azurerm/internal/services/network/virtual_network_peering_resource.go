@@ -9,10 +9,10 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
@@ -21,26 +21,26 @@ import (
 // or deleted at the same time
 var peerMutex = &sync.Mutex{}
 
-func resourceVirtualNetworkPeering() *schema.Resource {
-	return &schema.Resource{
+func resourceVirtualNetworkPeering() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceVirtualNetworkPeeringCreateUpdate,
 		Read:   resourceVirtualNetworkPeeringRead,
 		Update: resourceVirtualNetworkPeeringCreateUpdate,
 		Delete: resourceVirtualNetworkPeeringDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
@@ -48,37 +48,37 @@ func resourceVirtualNetworkPeering() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"virtual_network_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"remote_virtual_network_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"allow_virtual_network_access": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"allow_forwarded_traffic": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			"allow_gateway_transit": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			"use_remote_gateways": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
@@ -86,7 +86,7 @@ func resourceVirtualNetworkPeering() *schema.Resource {
 	}
 }
 
-func resourceVirtualNetworkPeeringCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualNetworkPeeringCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.VnetPeeringsClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -135,7 +135,7 @@ func resourceVirtualNetworkPeeringCreateUpdate(d *schema.ResourceData, meta inte
 	return resourceVirtualNetworkPeeringRead(d, meta)
 }
 
-func resourceVirtualNetworkPeeringRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualNetworkPeeringRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.VnetPeeringsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -175,7 +175,7 @@ func resourceVirtualNetworkPeeringRead(d *schema.ResourceData, meta interface{})
 	return nil
 }
 
-func resourceVirtualNetworkPeeringDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualNetworkPeeringDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Network.VnetPeeringsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -203,7 +203,7 @@ func resourceVirtualNetworkPeeringDelete(d *schema.ResourceData, meta interface{
 	return err
 }
 
-func getVirtualNetworkPeeringProperties(d *schema.ResourceData) *network.VirtualNetworkPeeringPropertiesFormat {
+func getVirtualNetworkPeeringProperties(d *pluginsdk.ResourceData) *network.VirtualNetworkPeeringPropertiesFormat {
 	allowVirtualNetworkAccess := d.Get("allow_virtual_network_access").(bool)
 	allowForwardedTraffic := d.Get("allow_forwarded_traffic").(bool)
 	allowGatewayTransit := d.Get("allow_gateway_transit").(bool)
@@ -221,7 +221,7 @@ func getVirtualNetworkPeeringProperties(d *schema.ResourceData) *network.Virtual
 	}
 }
 
-func retryVnetPeeringsClientCreateUpdate(d *schema.ResourceData, resGroup string, vnetName string, name string, peer network.VirtualNetworkPeering, meta interface{}) func() *resource.RetryError {
+func retryVnetPeeringsClientCreateUpdate(d *pluginsdk.ResourceData, resGroup string, vnetName string, name string, peer network.VirtualNetworkPeering, meta interface{}) func() *resource.RetryError {
 	return func() *resource.RetryError {
 		vnetPeeringsClient := meta.(*clients.Client).Network.VnetPeeringsClient
 		ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)

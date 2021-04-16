@@ -13,8 +13,6 @@ import (
 	autorestAzure "github.com/Azure/go-autorest/autorest/azure"
 	"github.com/hashicorp/go-azure-helpers/response"
 	"github.com/hashicorp/go-getter/helper/url"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -22,7 +20,9 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/storage/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 	"github.com/tombuildsstuff/giovanni/storage/2019-12-12/blob/accounts"
@@ -31,8 +31,8 @@ import (
 
 var storageAccountResourceName = "azurerm_storage_account"
 
-func resourceStorageAccount() *schema.Resource {
-	return &schema.Resource{
+func resourceStorageAccount() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceStorageAccountCreate,
 		Read:   resourceStorageAccountRead,
 		Update: resourceStorageAccountUpdate,
@@ -41,20 +41,20 @@ func resourceStorageAccount() *schema.Resource {
 		MigrateState:  ResourceStorageAccountMigrateState,
 		SchemaVersion: 2,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateStorageAccountName,
@@ -65,7 +65,7 @@ func resourceStorageAccount() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"account_kind": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(storage.Storage),
@@ -78,7 +78,7 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"account_tier": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -89,7 +89,7 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"account_replication_type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"LRS",
@@ -104,7 +104,7 @@ func resourceStorageAccount() *schema.Resource {
 
 			// Only valid for BlobStorage & StorageV2 accounts, defaults to "Hot" in create function
 			"access_tier": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -114,18 +114,18 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"custom_domain": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 						},
 
 						"use_subdomain": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
@@ -134,13 +134,13 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"enable_https_traffic_only": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"min_tls_version": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  string(storage.TLS10),
 				ValidateFunc: validation.StringInSlice([]string{
@@ -151,31 +151,31 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"is_hns_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  false,
 				ForceNew: true,
 			},
 
 			"allow_blob_public_access": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
 			"network_rules": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"bypass": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
 							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 								ValidateFunc: validation.StringInSlice([]string{
 									string(storage.AzureServices),
 									string(storage.Logging),
@@ -183,30 +183,30 @@ func resourceStorageAccount() *schema.Resource {
 									string(storage.None),
 								}, true),
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 
 						"ip_rules": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
 							Computed: true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type:         pluginsdk.TypeString,
 								ValidateFunc: validate.StorageAccountIpRule,
 							},
-							Set: schema.HashString,
+							Set: pluginsdk.HashString,
 						},
 
 						"virtual_network_subnet_ids": {
-							Type:     schema.TypeSet,
+							Type:     pluginsdk.TypeSet,
 							Optional: true,
 							Computed: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-							Set:      schema.HashString,
+							Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
+							Set:      pluginsdk.HashString,
 						},
 
 						"default_action": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(storage.DefaultActionAllow),
@@ -218,14 +218,14 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:             schema.TypeString,
+							Type:             pluginsdk.TypeString,
 							Required:         true,
 							DiffSuppressFunc: suppress.CaseDifference,
 							ValidateFunc: validation.StringInSlice([]string{
@@ -233,11 +233,11 @@ func resourceStorageAccount() *schema.Resource {
 							}, true),
 						},
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"tenant_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -245,21 +245,21 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"blob_properties": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"cors_rule": schemaStorageAccountCorsRule(true),
 						"delete_retention_policy": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"days": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										Default:      7,
 										ValidateFunc: validation.IntBetween(1, 365),
@@ -268,13 +268,13 @@ func resourceStorageAccount() *schema.Resource {
 							},
 						},
 						"container_delete_retention_policy": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"days": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										Default:      7,
 										ValidateFunc: validation.IntBetween(1, 365),
@@ -287,38 +287,38 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"queue_properties": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"cors_rule": schemaStorageAccountCorsRule(false),
 						"logging": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"version": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"delete": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Required: true,
 									},
 									"read": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Required: true,
 									},
 									"write": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Required: true,
 									},
 									"retention_policy_days": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntBetween(1, 365),
 									},
@@ -326,26 +326,26 @@ func resourceStorageAccount() *schema.Resource {
 							},
 						},
 						"hour_metrics": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"version": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Required: true,
 									},
 									"include_apis": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 									"retention_policy_days": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntBetween(1, 365),
 									},
@@ -353,26 +353,26 @@ func resourceStorageAccount() *schema.Resource {
 							},
 						},
 						"minute_metrics": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"version": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Required: true,
 									},
 									"include_apis": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 									},
 									"retention_policy_days": {
-										Type:         schema.TypeInt,
+										Type:         pluginsdk.TypeInt,
 										Optional:     true,
 										ValidateFunc: validation.IntBetween(1, 365),
 									},
@@ -384,18 +384,18 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"static_website": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"index_document": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 						"error_404_document": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
@@ -404,187 +404,187 @@ func resourceStorageAccount() *schema.Resource {
 			},
 
 			"large_file_share_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			"primary_location": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_location": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_blob_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_blob_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_blob_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_blob_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_queue_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_queue_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_queue_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_queue_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_table_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_table_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_table_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_table_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_web_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_web_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_web_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_web_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_dfs_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_dfs_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_dfs_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_dfs_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_file_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_file_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_file_endpoint": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"secondary_file_host": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"primary_access_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Sensitive: true,
 				Computed:  true,
 			},
 
 			"secondary_access_key": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"primary_connection_string": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"secondary_connection_string": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"primary_blob_connection_string": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"secondary_blob_connection_string": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"tags": {
-				Type:         schema.TypeMap,
+				Type:         pluginsdk.TypeMap,
 				Optional:     true,
 				ValidateFunc: validateAzureRMStorageAccountTags,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 		},
-		CustomizeDiff: func(d *schema.ResourceDiff, v interface{}) error {
+		CustomizeDiff: func(d *pluginsdk.ResourceDiff, v interface{}) error {
 			if d.HasChange("account_kind") {
 				accountKind, changedKind := d.GetChange("account_kind")
 
@@ -631,7 +631,7 @@ func validateAzureRMStorageAccountTags(v interface{}, _ string) (warnings []stri
 	return warnings, errors
 }
 
-func resourceStorageAccountCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageAccountCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	envName := meta.(*clients.Client).Account.Environment.Name
 	client := meta.(*clients.Client).Storage.AccountsClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
@@ -830,7 +830,7 @@ func resourceStorageAccountCreate(d *schema.ResourceData, meta interface{}) erro
 	return resourceStorageAccountRead(d, meta)
 }
 
-func resourceStorageAccountUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageAccountUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	envName := meta.(*clients.Client).Account.Environment.Name
 	client := meta.(*clients.Client).Storage.AccountsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
@@ -1088,7 +1088,7 @@ func resourceStorageAccountUpdate(d *schema.ResourceData, meta interface{}) erro
 	return resourceStorageAccountRead(d, meta)
 }
 
-func resourceStorageAccountRead(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageAccountRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Storage.AccountsClient
 	endpointSuffix := meta.(*clients.Client).Account.Environment.StorageEndpointSuffix
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
@@ -1319,7 +1319,7 @@ func resourceStorageAccountRead(d *schema.ResourceData, meta interface{}) error 
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceStorageAccountDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageAccountDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	storageClient := meta.(*clients.Client).Storage
 	client := storageClient.AccountsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
@@ -1387,7 +1387,7 @@ func resourceStorageAccountDelete(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-func expandStorageAccountCustomDomain(d *schema.ResourceData) *storage.CustomDomain {
+func expandStorageAccountCustomDomain(d *pluginsdk.ResourceData) *storage.CustomDomain {
 	domains := d.Get("custom_domain").([]interface{})
 	if len(domains) == 0 {
 		return &storage.CustomDomain{
@@ -1415,7 +1415,7 @@ func flattenStorageAccountCustomDomain(input *storage.CustomDomain) []interface{
 	return []interface{}{domain}
 }
 
-func expandStorageAccountNetworkRules(d *schema.ResourceData) *storage.NetworkRuleSet {
+func expandStorageAccountNetworkRules(d *pluginsdk.ResourceData) *storage.NetworkRuleSet {
 	networkRules := d.Get("network_rules").([]interface{})
 	if len(networkRules) == 0 {
 		// Default access is enabled when no network rules are set.
@@ -1437,7 +1437,7 @@ func expandStorageAccountNetworkRules(d *schema.ResourceData) *storage.NetworkRu
 }
 
 func expandStorageAccountIPRules(networkRule map[string]interface{}) *[]storage.IPRule {
-	ipRulesInfo := networkRule["ip_rules"].(*schema.Set).List()
+	ipRulesInfo := networkRule["ip_rules"].(*pluginsdk.Set).List()
 	ipRules := make([]storage.IPRule, len(ipRulesInfo))
 
 	for i, ipRuleConfig := range ipRulesInfo {
@@ -1453,7 +1453,7 @@ func expandStorageAccountIPRules(networkRule map[string]interface{}) *[]storage.
 }
 
 func expandStorageAccountVirtualNetworks(networkRule map[string]interface{}) *[]storage.VirtualNetworkRule {
-	virtualNetworkInfo := networkRule["virtual_network_subnet_ids"].(*schema.Set).List()
+	virtualNetworkInfo := networkRule["virtual_network_subnet_ids"].(*pluginsdk.Set).List()
 	virtualNetworks := make([]storage.VirtualNetworkRule, len(virtualNetworkInfo))
 
 	for i, virtualNetworkConfig := range virtualNetworkInfo {
@@ -1469,7 +1469,7 @@ func expandStorageAccountVirtualNetworks(networkRule map[string]interface{}) *[]
 }
 
 func expandStorageAccountBypass(networkRule map[string]interface{}) storage.Bypass {
-	bypassInfo := networkRule["bypass"].(*schema.Set).List()
+	bypassInfo := networkRule["bypass"].(*pluginsdk.Set).List()
 
 	var bypassValues []string
 	for _, bypassConfig := range bypassInfo {
@@ -1710,9 +1710,9 @@ func flattenStorageAccountNetworkRules(input *storage.NetworkRuleSet) []interfac
 
 	networkRules := make(map[string]interface{})
 
-	networkRules["ip_rules"] = schema.NewSet(schema.HashString, flattenStorageAccountIPRules(input.IPRules))
-	networkRules["virtual_network_subnet_ids"] = schema.NewSet(schema.HashString, flattenStorageAccountVirtualNetworks(input.VirtualNetworkRules))
-	networkRules["bypass"] = schema.NewSet(schema.HashString, flattenStorageAccountBypass(input.Bypass))
+	networkRules["ip_rules"] = pluginsdk.NewSet(pluginsdk.HashString, flattenStorageAccountIPRules(input.IPRules))
+	networkRules["virtual_network_subnet_ids"] = pluginsdk.NewSet(pluginsdk.HashString, flattenStorageAccountVirtualNetworks(input.VirtualNetworkRules))
+	networkRules["bypass"] = pluginsdk.NewSet(pluginsdk.HashString, flattenStorageAccountBypass(input.Bypass))
 	networkRules["default_action"] = string(input.DefaultAction)
 
 	return []interface{}{networkRules}
@@ -1990,7 +1990,7 @@ func ValidateStorageAccountName(v interface{}, _ string) (warnings []string, err
 	return warnings, errors
 }
 
-func expandAzureRmStorageAccountIdentity(d *schema.ResourceData) *storage.Identity {
+func expandAzureRmStorageAccountIdentity(d *pluginsdk.ResourceData) *storage.Identity {
 	identities := d.Get("identity").([]interface{})
 	identity := identities[0].(map[string]interface{})
 	identityType := identity["type"].(string)
@@ -2037,7 +2037,7 @@ func getBlobConnectionString(blobEndpoint *string, acctName *string, acctKey *st
 	return fmt.Sprintf("DefaultEndpointsProtocol=https;BlobEndpoint=%s;AccountName=%s;AccountKey=%s", endpoint, name, key)
 }
 
-func flattenAndSetAzureRmStorageAccountPrimaryEndpoints(d *schema.ResourceData, primary *storage.Endpoints) error {
+func flattenAndSetAzureRmStorageAccountPrimaryEndpoints(d *pluginsdk.ResourceData, primary *storage.Endpoints) error {
 	if primary == nil {
 		return fmt.Errorf("primary endpoints should not be empty")
 	}
@@ -2064,7 +2064,7 @@ func flattenAndSetAzureRmStorageAccountPrimaryEndpoints(d *schema.ResourceData, 
 	return nil
 }
 
-func flattenAndSetAzureRmStorageAccountSecondaryEndpoints(d *schema.ResourceData, secondary *storage.Endpoints) error {
+func flattenAndSetAzureRmStorageAccountSecondaryEndpoints(d *pluginsdk.ResourceData, secondary *storage.Endpoints) error {
 	if secondary == nil {
 		return nil
 	}
@@ -2090,7 +2090,7 @@ func flattenAndSetAzureRmStorageAccountSecondaryEndpoints(d *schema.ResourceData
 	return nil
 }
 
-func setEndpointAndHost(d *schema.ResourceData, ordinalString string, endpointType *string, typeString string) error {
+func setEndpointAndHost(d *pluginsdk.ResourceData, ordinalString string, endpointType *string, typeString string) error {
 	var endpoint, host string
 	if v := endpointType; v != nil {
 		endpoint = *v

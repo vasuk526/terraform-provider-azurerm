@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/frontdoor/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -20,10 +19,10 @@ type FrontDoorResource struct {
 func TestAccFrontDoor_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("backend_pool_health_probe.0.enabled").HasValue("true"),
 				check.That(data.ResourceName).Key("backend_pool_health_probe.0.probe_method").HasValue("GET"),
@@ -31,7 +30,7 @@ func TestAccFrontDoor_basic(t *testing.T) {
 		},
 		{
 			Config: r.basicDisabled(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("backend_pool_health_probe.0.enabled").HasValue("false"),
 				check.That(data.ResourceName).Key("backend_pool_health_probe.0.probe_method").HasValue("HEAD"),
@@ -45,10 +44,10 @@ func TestAccFrontDoor_basic(t *testing.T) {
 func TestAccFrontDoor_global(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.global(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("location").HasValue("global"),
 			),
@@ -62,10 +61,10 @@ func TestAccFrontDoor_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -76,24 +75,24 @@ func TestAccFrontDoor_requiresImport(t *testing.T) {
 func TestAccFrontDoor_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -104,10 +103,10 @@ func TestAccFrontDoor_update(t *testing.T) {
 func TestAccFrontDoor_multiplePools(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.multiplePools(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("backend_pool.#").HasValue("2"),
 				check.That(data.ResourceName).Key("backend_pool_health_probe.#").HasValue("2"),
@@ -123,10 +122,10 @@ func TestAccFrontDoor_multiplePools(t *testing.T) {
 func TestAccFrontDoor_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -137,10 +136,10 @@ func TestAccFrontDoor_complete(t *testing.T) {
 func TestAccFrontDoor_waf(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.waf(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -151,10 +150,10 @@ func TestAccFrontDoor_waf(t *testing.T) {
 func TestAccFrontDoor_EnableDisableCache(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.EnableCache(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_enabled").HasValue("true"),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_use_dynamic_compression").HasValue("false"),
@@ -163,7 +162,7 @@ func TestAccFrontDoor_EnableDisableCache(t *testing.T) {
 		},
 		{
 			Config: r.DisableCache(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_enabled").HasValue("false"),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_use_dynamic_compression").HasValue("false"),
@@ -172,7 +171,7 @@ func TestAccFrontDoor_EnableDisableCache(t *testing.T) {
 		},
 		{
 			Config: r.EnableCache(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_enabled").HasValue("true"),
 				check.That(data.ResourceName).Key("routing_rule.0.forwarding_configuration.0.cache_use_dynamic_compression").HasValue("false"),
@@ -186,10 +185,10 @@ func TestAccFrontDoor_EnableDisableCache(t *testing.T) {
 func TestAccFrontDoor_CustomHttps(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_frontdoor", "test")
 	r := FrontDoorResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.CustomHttpsEnabled(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("frontend_endpoint.0.custom_https_provisioning_enabled").HasValue("true"),
 				check.That(data.ResourceName).Key("frontend_endpoint.0.custom_https_configuration.0.certificate_source").HasValue("FrontDoor"),
@@ -200,7 +199,7 @@ func TestAccFrontDoor_CustomHttps(t *testing.T) {
 		},
 		{
 			Config: r.CustomHttpsDisabled(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("frontend_endpoint.0.custom_https_provisioning_enabled").HasValue("false"),
 			),
@@ -209,7 +208,7 @@ func TestAccFrontDoor_CustomHttps(t *testing.T) {
 	})
 }
 
-func (FrontDoorResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (FrontDoorResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.FrontDoorIDInsensitively(state.ID)
 	if err != nil {
 		return nil, err

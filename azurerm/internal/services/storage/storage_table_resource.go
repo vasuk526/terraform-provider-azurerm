@@ -5,27 +5,27 @@ import (
 	"log"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/storage/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/storage/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/tombuildsstuff/giovanni/storage/2019-12-12/table/tables"
 )
 
-func resourceStorageTable() *schema.Resource {
-	return &schema.Resource{
+func resourceStorageTable() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceStorageTableCreate,
 		Read:   resourceStorageTableRead,
 		Delete: resourceStorageTableDelete,
 		Update: resourceStorageTableUpdate,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 		SchemaVersion: 2,
-		StateUpgraders: []schema.StateUpgrader{
+		StateUpgraders: []pluginsdk.StateUpgrader{
 			{
 				// this should have been applied from pre-0.12 migration system; backporting just in-case
 				Type:    ResourceStorageTableStateResourceV0V1().CoreConfigSchema().ImpliedType(),
@@ -39,55 +39,55 @@ func resourceStorageTable() *schema.Resource {
 			},
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.StorageTableName,
 			},
 
 			"storage_account_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: ValidateStorageAccountName,
 			},
 
 			"acl": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"id": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringLenBetween(1, 64),
 						},
 						"access_policy": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"start": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"expiry": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 									"permissions": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
@@ -101,14 +101,14 @@ func resourceStorageTable() *schema.Resource {
 	}
 }
 
-func resourceStorageTableCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageTableCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
 	storageClient := meta.(*clients.Client).Storage
 
 	tableName := d.Get("name").(string)
 	accountName := d.Get("storage_account_name").(string)
-	aclsRaw := d.Get("acl").(*schema.Set).List()
+	aclsRaw := d.Get("acl").(*pluginsdk.Set).List()
 	acls := expandStorageTableACLs(aclsRaw)
 
 	account, err := storageClient.FindAccount(ctx, accountName)
@@ -147,7 +147,7 @@ func resourceStorageTableCreate(d *schema.ResourceData, meta interface{}) error 
 	return resourceStorageTableRead(d, meta)
 }
 
-func resourceStorageTableRead(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageTableRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	storageClient := meta.(*clients.Client).Storage
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -197,7 +197,7 @@ func resourceStorageTableRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceStorageTableDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageTableDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	storageClient := meta.(*clients.Client).Storage
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -228,7 +228,7 @@ func resourceStorageTableDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func resourceStorageTableUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceStorageTableUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	storageClient := meta.(*clients.Client).Storage
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -254,7 +254,7 @@ func resourceStorageTableUpdate(d *schema.ResourceData, meta interface{}) error 
 	if d.HasChange("acl") {
 		log.Printf("[DEBUG] Updating the ACL's for Storage Table %q (Storage Account %q)", id.Name, id.AccountName)
 
-		aclsRaw := d.Get("acl").(*schema.Set).List()
+		aclsRaw := d.Get("acl").(*pluginsdk.Set).List()
 		acls := expandStorageTableACLs(aclsRaw)
 
 		if err := client.UpdateACLs(ctx, account.ResourceGroup, id.AccountName, id.Name, acls); err != nil {

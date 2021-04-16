@@ -5,11 +5,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-func ValidatePrivateEndpointSettings(d *schema.ResourceData) error {
+func ValidatePrivateEndpointSettings(d *pluginsdk.ResourceData) error {
 	privateServiceConnections := d.Get("private_service_connection").([]interface{})
 
 	for _, psc := range privateServiceConnections {
@@ -30,7 +30,7 @@ func ValidatePrivateEndpointSettings(d *schema.ResourceData) error {
 	return nil
 }
 
-func ValidatePrivateLinkNatIpConfiguration(d *schema.ResourceDiff) error {
+func ValidatePrivateLinkNatIpConfiguration(d *pluginsdk.ResourceDiff) error {
 	name := d.Get("name").(string)
 	resourceGroup := d.Get("resource_group_name").(string)
 	ipConfigurations := d.Get("nat_ip_configuration").([]interface{})

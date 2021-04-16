@@ -3,11 +3,11 @@ package resource
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 )
 
 func TestValidateManagementLockName(t *testing.T) {
-	str := acctest.RandString(259)
+	str := acceptance.RandString(259)
 	testCases := []struct {
 		input       string
 		shouldError bool

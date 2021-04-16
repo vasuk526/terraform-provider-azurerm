@@ -5,12 +5,12 @@ import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
 // schema
-func expandEventHubAuthorizationRuleRights(d *schema.ResourceData) *[]eventhub.AccessRights {
+func expandEventHubAuthorizationRuleRights(d *pluginsdk.ResourceData) *[]eventhub.AccessRights {
 	rights := make([]eventhub.AccessRights, 0)
 
 	if d.Get("listen").(bool) {
@@ -49,58 +49,58 @@ func flattenEventHubAuthorizationRuleRights(rights *[]eventhub.AccessRights) (li
 	return listen, send, manage
 }
 
-func eventHubAuthorizationRuleSchemaFrom(s map[string]*schema.Schema) map[string]*schema.Schema {
-	authSchema := map[string]*schema.Schema{
+func eventHubAuthorizationRuleSchemaFrom(s map[string]*pluginsdk.Schema) map[string]*pluginsdk.Schema {
+	authSchema := map[string]*pluginsdk.Schema{
 		"listen": {
-			Type:     schema.TypeBool,
+			Type:     pluginsdk.TypeBool,
 			Optional: true,
 			Default:  false,
 		},
 
 		"manage": {
-			Type:     schema.TypeBool,
+			Type:     pluginsdk.TypeBool,
 			Optional: true,
 			Default:  false,
 		},
 
 		"primary_connection_string": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"primary_connection_string_alias": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"primary_key": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"secondary_connection_string": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"secondary_connection_string_alias": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"secondary_key": {
-			Type:      schema.TypeString,
+			Type:      pluginsdk.TypeString,
 			Computed:  true,
 			Sensitive: true,
 		},
 
 		"send": {
-			Type:     schema.TypeBool,
+			Type:     pluginsdk.TypeBool,
 			Optional: true,
 			Default:  false,
 		},
@@ -108,7 +108,7 @@ func eventHubAuthorizationRuleSchemaFrom(s map[string]*schema.Schema) map[string
 	return azure.MergeSchema(s, authSchema)
 }
 
-func eventHubAuthorizationRuleCustomizeDiff(d *schema.ResourceDiff, _ interface{}) error {
+func eventHubAuthorizationRuleCustomizeDiff(d *pluginsdk.ResourceDiff, _ interface{}) error {
 	listen, hasListen := d.GetOk("listen")
 	send, hasSend := d.GetOk("send")
 	manage, hasManage := d.GetOk("manage")

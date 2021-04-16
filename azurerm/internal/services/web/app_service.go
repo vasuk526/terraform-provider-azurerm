@@ -7,131 +7,131 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2020-06-01/web"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func schemaAppServiceAadAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceAadAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"client_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 				},
 				"client_secret": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Optional:  true,
 					Sensitive: true,
 				},
 				"allowed_audiences": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 			},
 		},
 	}
 }
 
-func schemaAppServiceFacebookAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceFacebookAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"app_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 				},
 				"app_secret": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					Sensitive: true,
 				},
 				"oauth_scopes": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 			},
 		},
 	}
 }
 
-func schemaAppServiceGoogleAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceGoogleAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"client_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 				},
 				"client_secret": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					Sensitive: true,
 				},
 				"oauth_scopes": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 			},
 		},
 	}
 }
 
-func schemaAppServiceMicrosoftAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceMicrosoftAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"client_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 				},
 				"client_secret": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					Sensitive: true,
 				},
 				"oauth_scopes": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 			},
 		},
 	}
 }
 
-func schemaAppServiceTwitterAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceTwitterAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"consumer_key": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 				},
 				"consumer_secret": {
-					Type:      schema.TypeString,
+					Type:      pluginsdk.TypeString,
 					Required:  true,
 					Sensitive: true,
 				},
@@ -140,35 +140,35 @@ func schemaAppServiceTwitterAuthSettings() *schema.Schema {
 	}
 }
 
-func schemaAppServiceAuthSettings() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceAuthSettings() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		Computed: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Required: true,
 				},
 
 				"additional_login_params": {
-					Type:     schema.TypeMap,
+					Type:     pluginsdk.TypeMap,
 					Optional: true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
+					Elem: &pluginsdk.Schema{
+						Type: pluginsdk.TypeString,
 					},
 				},
 
 				"allowed_external_redirect_urls": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 
 				"default_provider": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						string(web.BuiltInAuthenticationProviderAzureActiveDirectory),
@@ -182,30 +182,30 @@ func schemaAppServiceAuthSettings() *schema.Schema {
 				},
 
 				"issuer": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					ValidateFunc: validation.IsURLWithScheme([]string{"http", "https"}),
 				},
 
 				"runtime_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 
 				"token_refresh_extension_hours": {
-					Type:     schema.TypeFloat,
+					Type:     pluginsdk.TypeFloat,
 					Optional: true,
 					Default:  72,
 				},
 
 				"token_store_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
 
 				"unauthenticated_client_action": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						string(web.AllowAnonymous),
@@ -227,26 +227,26 @@ func schemaAppServiceAuthSettings() *schema.Schema {
 	}
 }
 
-func schemaAppServiceIdentity() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceIdentity() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		Computed: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"identity_ids": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
 					MinItems: 1,
-					Elem: &schema.Schema{
-						Type:         schema.TypeString,
+					Elem: &pluginsdk.Schema{
+						Type:         pluginsdk.TypeString,
 						ValidateFunc: validate.UserAssignedIdentityID,
 					},
 				},
 
 				"type": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						string(web.ManagedServiceIdentityTypeNone),
@@ -258,12 +258,12 @@ func schemaAppServiceIdentity() *schema.Schema {
 				},
 
 				"principal_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"tenant_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 			},
@@ -271,33 +271,33 @@ func schemaAppServiceIdentity() *schema.Schema {
 	}
 }
 
-func schemaAppServiceSiteConfig() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceSiteConfig() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		Computed: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"always_on": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
 
 				"app_command_line": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 
 				"default_documents": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 
 				"dotnet_framework_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Default:  "v4.0",
 					ValidateFunc: validation.StringInSlice([]string{
@@ -309,7 +309,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"http2_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
@@ -317,7 +317,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				"ip_restriction": schemaAppServiceIpRestriction(),
 
 				"scm_use_main_ip_restriction": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
@@ -325,7 +325,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				"scm_ip_restriction": schemaAppServiceIpRestriction(),
 
 				"java_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringMatch(
 						regexp.MustCompile(`^(1\.7|1\.8|11)`),
@@ -333,7 +333,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"java_container": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						"JAVA",
@@ -344,18 +344,18 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"java_container_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 
 				"local_mysql_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Computed: true,
 				},
 
 				"managed_pipeline_mode": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -366,7 +366,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"php_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						"5.5",
@@ -380,7 +380,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"python_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						"2.7",
@@ -389,13 +389,13 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"remote_debugging_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
 
 				"remote_debugging_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -409,7 +409,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"scm_type": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -431,18 +431,18 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"use_32_bit_worker_process": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 				},
 
 				"websockets_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Computed: true,
 				},
 
 				"ftps_state": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -453,31 +453,31 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				},
 
 				"health_check_path": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 
 				"number_of_workers": {
-					Type:         schema.TypeInt,
+					Type:         pluginsdk.TypeInt,
 					Optional:     true,
 					ValidateFunc: validation.IntBetween(1, 100),
 					Computed:     true,
 				},
 
 				"linux_fx_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 				},
 
 				"windows_fx_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 				},
 
 				"min_tls_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 					Computed: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -490,7 +490,7 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 				"cors": SchemaWebCorsSettings(),
 
 				"auto_swap_slot_name": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 			},
@@ -498,23 +498,23 @@ func schemaAppServiceSiteConfig() *schema.Schema {
 	}
 }
 
-func schemaAppServiceLogsConfig() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceLogsConfig() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Optional: true,
 		Computed: true,
 		MaxItems: 1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"application_logs": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
 					Computed: true,
 					MaxItems: 1,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"file_system_level": {
-								Type:          schema.TypeString,
+								Type:          pluginsdk.TypeString,
 								Optional:      true,
 								Default:       "Off",
 								ConflictsWith: []string{"logs.0.http_logs.0.azure_blob_storage"},
@@ -527,13 +527,13 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 								}, false),
 							},
 							"azure_blob_storage": {
-								Type:     schema.TypeList,
+								Type:     pluginsdk.TypeList,
 								Optional: true,
 								MaxItems: 1,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
+								Elem: &pluginsdk.Resource{
+									Schema: map[string]*pluginsdk.Schema{
 										"level": {
-											Type:     schema.TypeString,
+											Type:     pluginsdk.TypeString,
 											Required: true,
 											ValidateFunc: validation.StringInSlice([]string{
 												string(web.Error),
@@ -544,12 +544,12 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 											}, false),
 										},
 										"sas_url": {
-											Type:      schema.TypeString,
+											Type:      pluginsdk.TypeString,
 											Required:  true,
 											Sensitive: true,
 										},
 										"retention_in_days": {
-											Type:     schema.TypeInt,
+											Type:     pluginsdk.TypeInt,
 											Required: true,
 										},
 									},
@@ -559,25 +559,25 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 					},
 				},
 				"http_logs": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Optional: true,
 					Computed: true,
 					MaxItems: 1,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"file_system": {
-								Type:     schema.TypeList,
+								Type:     pluginsdk.TypeList,
 								Optional: true,
 								MaxItems: 1,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
+								Elem: &pluginsdk.Resource{
+									Schema: map[string]*pluginsdk.Schema{
 										"retention_in_mb": {
-											Type:         schema.TypeInt,
+											Type:         pluginsdk.TypeInt,
 											Required:     true,
 											ValidateFunc: validation.IntBetween(25, 100),
 										},
 										"retention_in_days": {
-											Type:         schema.TypeInt,
+											Type:         pluginsdk.TypeInt,
 											Required:     true,
 											ValidateFunc: validation.IntAtLeast(0),
 										},
@@ -586,18 +586,18 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 								ConflictsWith: []string{"logs.0.http_logs.0.azure_blob_storage"},
 							},
 							"azure_blob_storage": {
-								Type:     schema.TypeList,
+								Type:     pluginsdk.TypeList,
 								Optional: true,
 								MaxItems: 1,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
+								Elem: &pluginsdk.Resource{
+									Schema: map[string]*pluginsdk.Schema{
 										"sas_url": {
-											Type:      schema.TypeString,
+											Type:      pluginsdk.TypeString,
 											Required:  true,
 											Sensitive: true,
 										},
 										"retention_in_days": {
-											Type:     schema.TypeInt,
+											Type:     pluginsdk.TypeInt,
 											Required: true,
 										},
 									},
@@ -608,12 +608,12 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 					},
 				},
 				"detailed_error_messages_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
 				"failed_request_tracing_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Optional: true,
 					Default:  false,
 				},
@@ -622,21 +622,21 @@ func schemaAppServiceLogsConfig() *schema.Schema {
 	}
 }
 
-func schemaAppServiceStorageAccounts() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeSet,
+func schemaAppServiceStorageAccounts() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeSet,
 		Optional: true,
 		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"name": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"type": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Required: true,
 					ValidateFunc: validation.StringInSlice([]string{
 						string(web.AzureBlob),
@@ -645,26 +645,26 @@ func schemaAppServiceStorageAccounts() *schema.Schema {
 				},
 
 				"account_name": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"share_name": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"access_key": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Required:     true,
 					Sensitive:    true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"mount_path": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Optional: true,
 				},
 			},
@@ -672,149 +672,149 @@ func schemaAppServiceStorageAccounts() *schema.Schema {
 	}
 }
 
-func schemaAppServiceDataSourceSiteConfig() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceDataSourceSiteConfig() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"always_on": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"app_command_line": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"default_documents": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Computed: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+					Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 				},
 
 				"dotnet_framework_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"http2_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"ip_restriction": schemaAppServiceDataSourceIpRestriction(),
 
 				"scm_use_main_ip_restriction": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"scm_ip_restriction": schemaAppServiceDataSourceIpRestriction(),
 
 				"java_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"java_container": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"java_container_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"local_mysql_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"managed_pipeline_mode": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"php_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"python_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"remote_debugging_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"remote_debugging_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"scm_type": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"use_32_bit_worker_process": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"websockets_enabled": {
-					Type:     schema.TypeBool,
+					Type:     pluginsdk.TypeBool,
 					Computed: true,
 				},
 
 				"ftps_state": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"health_check_path": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"number_of_workers": {
-					Type:     schema.TypeInt,
+					Type:     pluginsdk.TypeInt,
 					Computed: true,
 				},
 
 				"linux_fx_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"windows_fx_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"min_tls_version": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 
 				"cors": {
-					Type:     schema.TypeList,
+					Type:     pluginsdk.TypeList,
 					Computed: true,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
+					Elem: &pluginsdk.Resource{
+						Schema: map[string]*pluginsdk.Schema{
 							"allowed_origins": {
-								Type:     schema.TypeSet,
+								Type:     pluginsdk.TypeSet,
 								Computed: true,
-								Elem:     &schema.Schema{Type: schema.TypeString},
+								Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 							},
 							"support_credentials": {
-								Type:     schema.TypeBool,
+								Type:     pluginsdk.TypeBool,
 								Computed: true,
 							},
 						},
@@ -825,29 +825,29 @@ func schemaAppServiceDataSourceSiteConfig() *schema.Schema {
 	}
 }
 
-func schemaAppServiceIpRestriction() *schema.Schema {
-	return &schema.Schema{
-		Type:       schema.TypeList,
+func schemaAppServiceIpRestriction() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:       pluginsdk.TypeList,
 		Optional:   true,
 		Computed:   true,
-		ConfigMode: schema.SchemaConfigModeAttr,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		ConfigMode: pluginsdk.SchemaConfigModeAttr,
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"ip_address": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"service_tag": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"subnet_id": {
 					// TODO - Remove in 3.0
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					Computed:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
@@ -855,28 +855,28 @@ func schemaAppServiceIpRestriction() *schema.Schema {
 				},
 
 				"virtual_network_subnet_id": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Computed:     true, // TODO Remove `Computed` in 3.0
 					Optional:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"name": {
-					Type:         schema.TypeString,
+					Type:         pluginsdk.TypeString,
 					Optional:     true,
 					Computed:     true,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
 
 				"priority": {
-					Type:         schema.TypeInt,
+					Type:         pluginsdk.TypeInt,
 					Optional:     true,
 					Default:      65000,
 					ValidateFunc: validation.IntBetween(1, 2147483647),
 				},
 
 				"action": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Default:  "Allow",
 					Optional: true,
 					ValidateFunc: validation.StringInSlice([]string{
@@ -889,39 +889,39 @@ func schemaAppServiceIpRestriction() *schema.Schema {
 	}
 }
 
-func schemaAppServiceDataSourceIpRestriction() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
+func schemaAppServiceDataSourceIpRestriction() *pluginsdk.Schema {
+	return &pluginsdk.Schema{
+		Type:     pluginsdk.TypeList,
 		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
+		Elem: &pluginsdk.Resource{
+			Schema: map[string]*pluginsdk.Schema{
 				"ip_address": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 				"service_tag": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 				"subnet_id": {
 					// TODO - Remove in 3.0
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 				"virtual_network_subnet_id": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 				"name": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 				"priority": {
-					Type:     schema.TypeInt,
+					Type:     pluginsdk.TypeInt,
 					Computed: true,
 				},
 				"action": {
-					Type:     schema.TypeString,
+					Type:     pluginsdk.TypeString,
 					Computed: true,
 				},
 			},

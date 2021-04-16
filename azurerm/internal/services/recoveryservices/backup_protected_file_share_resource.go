@@ -9,60 +9,60 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/recoveryservices/mgmt/2019-05-13/backup"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/storage/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceBackupProtectedFileShare() *schema.Resource {
-	return &schema.Resource{
+func resourceBackupProtectedFileShare() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceBackupProtectedFileShareCreateUpdate,
 		Read:   resourceBackupProtectedFileShareRead,
 		Update: resourceBackupProtectedFileShareCreateUpdate,
 		Delete: resourceBackupProtectedFileShareDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(80 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(80 * time.Minute),
-			Delete: schema.DefaultTimeout(80 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(80 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(80 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(80 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"recovery_vault_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateRecoveryServicesVaultName,
 			},
 
 			"source_storage_account_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
 
 			"source_file_share_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.StorageShareName,
 			},
 
 			"backup_policy_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
@@ -70,7 +70,7 @@ func resourceBackupProtectedFileShare() *schema.Resource {
 	}
 }
 
-func resourceBackupProtectedFileShareCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceBackupProtectedFileShareCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	protectedClient := meta.(*clients.Client).RecoveryServices.ProtectedItemsGroupClient
 	protectableClient := meta.(*clients.Client).RecoveryServices.ProtectableItemsClient
 	client := meta.(*clients.Client).RecoveryServices.ProtectedItemsClient
@@ -203,7 +203,7 @@ func resourceBackupProtectedFileShareCreateUpdate(d *schema.ResourceData, meta i
 	return resourceBackupProtectedFileShareRead(d, meta)
 }
 
-func resourceBackupProtectedFileShareRead(d *schema.ResourceData, meta interface{}) error {
+func resourceBackupProtectedFileShareRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).RecoveryServices.ProtectedItemsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -248,7 +248,7 @@ func resourceBackupProtectedFileShareRead(d *schema.ResourceData, meta interface
 	return nil
 }
 
-func resourceBackupProtectedFileShareDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceBackupProtectedFileShareDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).RecoveryServices.ProtectedItemsClient
 	opClient := meta.(*clients.Client).RecoveryServices.BackupOperationStatusesClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
@@ -294,7 +294,7 @@ func resourceBackupProtectedFileShareDelete(d *schema.ResourceData, meta interfa
 }
 
 // nolint unused - linter mistakenly things this function isn't used?
-func resourceBackupProtectedFileShareWaitForOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string, d *schema.ResourceData) (backup.OperationStatus, error) {
+func resourceBackupProtectedFileShareWaitForOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string, d *pluginsdk.ResourceData) (backup.OperationStatus, error) {
 	state := &resource.StateChangeConf{
 		MinTimeout: 10 * time.Second,
 		Delay:      10 * time.Second,
@@ -304,9 +304,9 @@ func resourceBackupProtectedFileShareWaitForOperation(ctx context.Context, clien
 	}
 
 	if d.IsNewResource() {
-		state.Timeout = d.Timeout(schema.TimeoutCreate)
+		state.Timeout = d.Timeout(pluginsdk.TimeoutCreate)
 	} else {
-		state.Timeout = d.Timeout(schema.TimeoutUpdate)
+		state.Timeout = d.Timeout(pluginsdk.TimeoutUpdate)
 	}
 
 	log.Printf("[DEBUG] Waiting for backup operation %s (Vault %s) to complete", operationID, vaultName)

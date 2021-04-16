@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hdinsight/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -20,10 +19,10 @@ type HDInsightHadoopClusterResource struct {
 func TestAccHDInsightHadoopCluster_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -43,10 +42,10 @@ func TestAccHDInsightHadoopCluster_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -59,10 +58,10 @@ func TestAccHDInsightHadoopCluster_requiresImport(t *testing.T) {
 func TestAccHDInsightHadoopCluster_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -77,7 +76,7 @@ func TestAccHDInsightHadoopCluster_update(t *testing.T) {
 			"storage_account"),
 		{
 			Config: r.updated(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -96,10 +95,10 @@ func TestAccHDInsightHadoopCluster_update(t *testing.T) {
 func TestAccHDInsightHadoopCluster_sshKeys(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.sshKeys(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -118,10 +117,10 @@ func TestAccHDInsightHadoopCluster_sshKeys(t *testing.T) {
 func TestAccHDInsightHadoopCluster_virtualNetwork(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.virtualNetwork(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -140,10 +139,10 @@ func TestAccHDInsightHadoopCluster_virtualNetwork(t *testing.T) {
 func TestAccHDInsightHadoopCluster_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -162,10 +161,10 @@ func TestAccHDInsightHadoopCluster_complete(t *testing.T) {
 func TestAccHDInsightHadoopCluster_edgeNodeBasic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.edgeNodeBasic(data, 2, "Standard_D3_V2"),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -186,10 +185,10 @@ func TestAccHDInsightHadoopCluster_edgeNodeBasic(t *testing.T) {
 func TestAccHDInsightHadoopCluster_addEdgeNodeBasic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -204,7 +203,7 @@ func TestAccHDInsightHadoopCluster_addEdgeNodeBasic(t *testing.T) {
 			"storage_account"),
 		{
 			Config: r.edgeNodeBasic(data, 1, "Standard_D3_V2"),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -221,7 +220,7 @@ func TestAccHDInsightHadoopCluster_addEdgeNodeBasic(t *testing.T) {
 			"storage_account"),
 		{
 			Config: r.edgeNodeBasic(data, 3, "Standard_D4_V2"),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -242,10 +241,10 @@ func TestAccHDInsightHadoopCluster_addEdgeNodeBasic(t *testing.T) {
 func TestAccHDInsightHadoopCluster_gen2storage(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.gen2storage(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -264,10 +263,10 @@ func TestAccHDInsightHadoopCluster_gen2storage(t *testing.T) {
 func TestAccHDInsightHadoopCluster_gen2AndBlobStorage(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.gen2AndBlobStorage(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -286,10 +285,10 @@ func TestAccHDInsightHadoopCluster_gen2AndBlobStorage(t *testing.T) {
 func TestAccHDInsightHadoopCluster_tls(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.tls(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -308,10 +307,10 @@ func TestAccHDInsightHadoopCluster_tls(t *testing.T) {
 func TestAccHDInsightHadoopCluster_allMetastores(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.allMetastores(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -333,10 +332,10 @@ func TestAccHDInsightHadoopCluster_allMetastores(t *testing.T) {
 func TestAccHDInsightHadoopCluster_hiveMetastore(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.hiveMetastore(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -348,10 +347,10 @@ func TestAccHDInsightHadoopCluster_hiveMetastore(t *testing.T) {
 func TestAccHDInsightHadoopCluster_updateMetastore(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.hiveMetastore(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -369,7 +368,7 @@ func TestAccHDInsightHadoopCluster_updateMetastore(t *testing.T) {
 			"metastores.0.ambari.0.password"),
 		{
 			Config: r.allMetastores(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -391,10 +390,10 @@ func TestAccHDInsightHadoopCluster_updateMetastore(t *testing.T) {
 func TestAccHDInsightHadoopCluster_monitor(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.monitor(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -413,10 +412,10 @@ func TestAccHDInsightHadoopCluster_monitor(t *testing.T) {
 func TestAccHDInsightHadoopCluster_updateGateway(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -431,7 +430,7 @@ func TestAccHDInsightHadoopCluster_updateGateway(t *testing.T) {
 			"storage_account"),
 		{
 			Config: r.updateGateway(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -450,11 +449,11 @@ func TestAccHDInsightHadoopCluster_updateGateway(t *testing.T) {
 func TestAccHDInsightHadoopCluster_updateMonitor(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_hdinsight_hadoop_cluster", "test")
 	r := HDInsightHadoopClusterResource{}
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		// No monitor
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -470,7 +469,7 @@ func TestAccHDInsightHadoopCluster_updateMonitor(t *testing.T) {
 		// Add monitor
 		{
 			Config: r.monitor(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -489,7 +488,7 @@ func TestAccHDInsightHadoopCluster_updateMonitor(t *testing.T) {
 				data.RandomString += "new"
 			},
 			Config: r.monitor(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -505,7 +504,7 @@ func TestAccHDInsightHadoopCluster_updateMonitor(t *testing.T) {
 		// Remove monitor
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("https_endpoint").Exists(),
 				check.That(data.ResourceName).Key("ssh_endpoint").Exists(),
@@ -521,7 +520,7 @@ func TestAccHDInsightHadoopCluster_updateMonitor(t *testing.T) {
 	})
 }
 
-func (t HDInsightHadoopClusterResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t HDInsightHadoopClusterResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.ClusterID(state.ID)
 	if err != nil {
 		return nil, err

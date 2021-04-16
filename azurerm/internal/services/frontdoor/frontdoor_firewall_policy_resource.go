@@ -7,8 +7,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/frontdoor/mgmt/2020-01-01/frontdoor"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -17,13 +15,15 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/frontdoor/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/frontdoor/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceFrontDoorFirewallPolicy() *schema.Resource {
-	return &schema.Resource{
+func resourceFrontDoorFirewallPolicy() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceFrontDoorFirewallPolicyCreateUpdate,
 		Read:   resourceFrontDoorFirewallPolicyRead,
 		Update: resourceFrontDoorFirewallPolicyCreateUpdate,
@@ -34,16 +34,16 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			return err
 		}),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.FrontDoorWAFName,
@@ -54,13 +54,13 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"mode": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(frontdoor.Detection),
@@ -70,13 +70,13 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			},
 
 			"redirect_url": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsURLWithScheme([]string{"http", "https"}),
 			},
 
 			"custom_block_response_status_code": {
-				Type:     schema.TypeInt,
+				Type:     pluginsdk.TypeInt,
 				Optional: true,
 				ValidateFunc: validation.IntInSlice([]int{
 					200,
@@ -88,37 +88,37 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			},
 
 			"custom_block_response_body": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.CustomBlockResponseBody,
 			},
 
 			"custom_rule": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				MaxItems: 100,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Optional: true,
 							Default:  true,
 						},
 
 						"priority": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Optional: true,
 							Default:  1,
 						},
 
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(frontdoor.MatchRule),
@@ -127,19 +127,19 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 						},
 
 						"rate_limit_duration_in_minutes": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Optional: true,
 							Default:  1,
 						},
 
 						"rate_limit_threshold": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Optional: true,
 							Default:  10,
 						},
 
 						"action": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(frontdoor.Allow),
@@ -150,13 +150,13 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 						},
 
 						"match_condition": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Optional: true,
 							MaxItems: 10,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"match_variable": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(frontdoor.Cookies),
@@ -172,17 +172,17 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 									},
 
 									"match_values": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Required: true,
 										MaxItems: 600,
-										Elem: &schema.Schema{
-											Type:         schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type:         pluginsdk.TypeString,
 											ValidateFunc: validation.StringLenBetween(1, 256),
 										},
 									},
 
 									"operator": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(frontdoor.OperatorAny),
@@ -201,23 +201,23 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 									},
 
 									"selector": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Optional:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"negation_condition": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Optional: true,
 										Default:  false,
 									},
 
 									"transforms": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Optional: true,
 										MaxItems: 5,
-										Elem: &schema.Schema{
-											Type: schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type: pluginsdk.TypeString,
 											ValidateFunc: validation.StringInSlice([]string{
 												string(frontdoor.Lowercase),
 												string(frontdoor.RemoveNulls),
@@ -236,31 +236,31 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			},
 
 			"managed_rule": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				MaxItems: 100,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"version": {
-							Type:         schema.TypeString,
+							Type:         pluginsdk.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 
 						"exclusion": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							MaxItems: 100,
 							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"match_variable": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(frontdoor.QueryStringArgNames),
@@ -270,7 +270,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 										}, false),
 									},
 									"operator": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
 											string(frontdoor.Contains),
@@ -281,7 +281,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 										}, false),
 									},
 									"selector": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
@@ -290,25 +290,25 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 						},
 
 						"override": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							MaxItems: 100,
 							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"rule_group_name": {
-										Type:         schema.TypeString,
+										Type:         pluginsdk.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringIsNotEmpty,
 									},
 
 									"exclusion": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										MaxItems: 100,
 										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"match_variable": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Required: true,
 													ValidateFunc: validation.StringInSlice([]string{
 														string(frontdoor.QueryStringArgNames),
@@ -318,7 +318,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 													}, false),
 												},
 												"operator": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Required: true,
 													ValidateFunc: validation.StringInSlice([]string{
 														string(frontdoor.Contains),
@@ -329,7 +329,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 													}, false),
 												},
 												"selector": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Required:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
@@ -338,31 +338,31 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 									},
 
 									"rule": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										MaxItems: 1000,
 										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"rule_id": {
-													Type:         schema.TypeString,
+													Type:         pluginsdk.TypeString,
 													Required:     true,
 													ValidateFunc: validation.StringIsNotEmpty,
 												},
 
 												"enabled": {
-													Type:     schema.TypeBool,
+													Type:     pluginsdk.TypeBool,
 													Optional: true,
 													Default:  false,
 												},
 
 												"exclusion": {
-													Type:     schema.TypeList,
+													Type:     pluginsdk.TypeList,
 													MaxItems: 100,
 													Optional: true,
-													Elem: &schema.Resource{
-														Schema: map[string]*schema.Schema{
+													Elem: &pluginsdk.Resource{
+														Schema: map[string]*pluginsdk.Schema{
 															"match_variable": {
-																Type:     schema.TypeString,
+																Type:     pluginsdk.TypeString,
 																Required: true,
 																ValidateFunc: validation.StringInSlice([]string{
 																	string(frontdoor.QueryStringArgNames),
@@ -372,7 +372,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 																}, false),
 															},
 															"operator": {
-																Type:     schema.TypeString,
+																Type:     pluginsdk.TypeString,
 																Required: true,
 																ValidateFunc: validation.StringInSlice([]string{
 																	string(frontdoor.Contains),
@@ -383,7 +383,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 																}, false),
 															},
 															"selector": {
-																Type:         schema.TypeString,
+																Type:         pluginsdk.TypeString,
 																Required:     true,
 																ValidateFunc: validation.StringIsNotEmpty,
 															},
@@ -392,7 +392,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 												},
 
 												"action": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Required: true,
 													ValidateFunc: validation.StringInSlice([]string{
 														string(frontdoor.Allow),
@@ -412,10 +412,10 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 			},
 
 			"frontend_endpoint_ids": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 
@@ -423,7 +423,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 		},
 
 		SchemaVersion: 1,
-		StateUpgraders: []schema.StateUpgrader{
+		StateUpgraders: []pluginsdk.StateUpgrader{
 			{
 				Type:    migration.WebApplicationFirewallPolicyV0Schema().CoreConfigSchema().ImpliedType(),
 				Upgrade: migration.WebApplicationFirewallPolicyV0ToV1,
@@ -433,7 +433,7 @@ func resourceFrontDoorFirewallPolicy() *schema.Resource {
 	}
 }
 
-func resourceFrontDoorFirewallPolicyCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceFrontDoorFirewallPolicyCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Frontdoor.FrontDoorsPolicyClient
 	subscriptionId := meta.(*clients.Client).Account.SubscriptionId
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
@@ -507,7 +507,7 @@ func resourceFrontDoorFirewallPolicyCreateUpdate(d *schema.ResourceData, meta in
 	return resourceFrontDoorFirewallPolicyRead(d, meta)
 }
 
-func resourceFrontDoorFirewallPolicyRead(d *schema.ResourceData, meta interface{}) error {
+func resourceFrontDoorFirewallPolicyRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Frontdoor.FrontDoorsPolicyClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -559,7 +559,7 @@ func resourceFrontDoorFirewallPolicyRead(d *schema.ResourceData, meta interface{
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceFrontDoorFirewallPolicyDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceFrontDoorFirewallPolicyDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Frontdoor.FrontDoorsPolicyClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

@@ -7,48 +7,48 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/blueprint/mgmt/2018-11-01-preview/blueprint"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/structure"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/blueprints/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/blueprints/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceBlueprintAssignment() *schema.Resource {
-	return &schema.Resource{
+func resourceBlueprintAssignment() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceBlueprintAssignmentCreateUpdate,
 		Update: resourceBlueprintAssignmentCreateUpdate,
 		Read:   resourceBlueprintAssignmentRead,
 		Delete: resourceBlueprintAssignmentDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+		Importer: &pluginsdk.ResourceImporter{
+			State: pluginsdk.ImportStatePassthrough,
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Delete: schema.DefaultTimeout(5 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(5 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"target_subscription_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
@@ -59,13 +59,13 @@ func resourceBlueprintAssignment() *schema.Resource {
 			"identity": ManagedIdentitySchema(),
 
 			"version_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validate.VersionID,
 			},
 
 			"parameter_values": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				StateFunc:        normalizeAssignmentParameterValuesJSON,
 				ValidateFunc:     validation.StringIsJSON,
@@ -73,7 +73,7 @@ func resourceBlueprintAssignment() *schema.Resource {
 			},
 
 			"resource_groups": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				StateFunc:        normalizeAssignmentResourceGroupValuesJSON,
 				ValidateFunc:     validation.StringIsJSON,
@@ -81,7 +81,7 @@ func resourceBlueprintAssignment() *schema.Resource {
 			},
 
 			"lock_mode": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  string(blueprint.None),
 				ValidateFunc: validation.StringInSlice([]string{
@@ -94,39 +94,39 @@ func resourceBlueprintAssignment() *schema.Resource {
 			},
 
 			"lock_exclude_principals": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Optional: true,
 				MaxItems: 5,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type:         pluginsdk.TypeString,
 					ValidateFunc: validation.IsUUID,
 				},
 			},
 
 			"description": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"display_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"blueprint_name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"type": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 		},
 	}
 }
 
-func resourceBlueprintAssignmentCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceBlueprintAssignmentCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Blueprints.AssignmentsClient
 	ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -201,7 +201,7 @@ func resourceBlueprintAssignmentCreateUpdate(d *schema.ResourceData, meta interf
 		},
 		Target:  []string{string(blueprint.Succeeded)},
 		Refresh: blueprintAssignmentCreateStateRefreshFunc(ctx, client, targetScope, name),
-		Timeout: d.Timeout(schema.TimeoutCreate),
+		Timeout: d.Timeout(pluginsdk.TimeoutCreate),
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {
@@ -217,7 +217,7 @@ func resourceBlueprintAssignmentCreateUpdate(d *schema.ResourceData, meta interf
 	return resourceBlueprintAssignmentRead(d, meta)
 }
 
-func resourceBlueprintAssignmentRead(d *schema.ResourceData, meta interface{}) error {
+func resourceBlueprintAssignmentRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Blueprints.AssignmentsClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -299,7 +299,7 @@ func resourceBlueprintAssignmentRead(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceBlueprintAssignmentDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceBlueprintAssignmentDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Blueprints.AssignmentsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -329,7 +329,7 @@ func resourceBlueprintAssignmentDelete(d *schema.ResourceData, meta interface{})
 		},
 		Target:  []string{"NotFound"},
 		Refresh: blueprintAssignmentDeleteStateRefreshFunc(ctx, client, id.Scope, id.Name),
-		Timeout: d.Timeout(schema.TimeoutDelete),
+		Timeout: d.Timeout(pluginsdk.TimeoutDelete),
 	}
 
 	if _, err := stateConf.WaitForState(); err != nil {

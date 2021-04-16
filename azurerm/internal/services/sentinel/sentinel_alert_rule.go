@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/securityinsight/mgmt/2019-01-01-preview/securityinsight"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/sentinel/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 )
 
@@ -26,8 +26,8 @@ func alertRuleID(rule securityinsight.BasicAlertRule) *string {
 	}
 }
 
-func importSentinelAlertRule(expectKind securityinsight.AlertRuleKind) func(d *schema.ResourceData, meta interface{}) (data []*schema.ResourceData, err error) {
-	return func(d *schema.ResourceData, meta interface{}) (data []*schema.ResourceData, err error) {
+func importSentinelAlertRule(expectKind securityinsight.AlertRuleKind) func(d *pluginsdk.ResourceData, meta interface{}) (data []*pluginsdk.ResourceData, err error) {
+	return func(d *pluginsdk.ResourceData, meta interface{}) (data []*pluginsdk.ResourceData, err error) {
 		id, err := parse.AlertRuleID(d.Id())
 		if err != nil {
 			return nil, err
@@ -45,7 +45,7 @@ func importSentinelAlertRule(expectKind securityinsight.AlertRuleKind) func(d *s
 		if err := assertAlertRuleKind(resp.Value, expectKind); err != nil {
 			return nil, err
 		}
-		return []*schema.ResourceData{d}, nil
+		return []*pluginsdk.ResourceData{d}, nil
 	}
 }
 

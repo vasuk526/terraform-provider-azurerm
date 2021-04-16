@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
-
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/sdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -35,24 +33,24 @@ func (r ConsumerGroupResource) ResourceType() string {
 	return "azurerm_eventhub_consumer_group"
 }
 
-func (r ConsumerGroupResource) Arguments() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+func (r ConsumerGroupResource) Arguments() map[string]*pluginsdk.Schema {
+	return map[string]*pluginsdk.Schema{
 		"name": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validate.ValidateEventHubConsumerName(),
 		},
 
 		"namespace_name": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validate.ValidateEventHubNamespaceName(),
 		},
 
 		"eventhub_name": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validate.ValidateEventHubName(),
@@ -61,15 +59,15 @@ func (r ConsumerGroupResource) Arguments() map[string]*schema.Schema {
 		"resource_group_name": azure.SchemaResourceGroupName(),
 
 		"user_metadata": {
-			Type:         schema.TypeString,
+			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.StringLenBetween(1, 1024),
 		},
 	}
 }
 
-func (r ConsumerGroupResource) Attributes() map[string]*schema.Schema {
-	return map[string]*schema.Schema{}
+func (r ConsumerGroupResource) Attributes() map[string]*pluginsdk.Schema {
+	return map[string]*pluginsdk.Schema{}
 }
 
 func (r ConsumerGroupResource) Create() sdk.ResourceFunc {

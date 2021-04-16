@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -20,7 +19,7 @@ func TestAccBackupProtectionPolicyFileShare_basicDaily(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_backup_policy_file_share", "test")
 	r := BackupProtectionPolicyFileShareResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basicDaily(data),
 			Check:  checkAccBackupProtectionPolicyFileShare_basicDaily(data.ResourceName, data.RandomInteger),
@@ -33,7 +32,7 @@ func TestAccBackupProtectionPolicyFileShare_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_backup_policy_file_share", "test")
 	r := BackupProtectionPolicyFileShareResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basicDaily(data),
 			Check:  checkAccBackupProtectionPolicyFileShare_basicDaily(data.ResourceName, data.RandomInteger),
@@ -46,7 +45,7 @@ func TestAccBackupProtectionPolicyFileShare_updateDaily(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_backup_policy_file_share", "test")
 	r := BackupProtectionPolicyFileShareResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basicDaily(data),
 			Check:  checkAccBackupProtectionPolicyFileShare_basicDaily(data.ResourceName, data.RandomInteger),
@@ -60,7 +59,7 @@ func TestAccBackupProtectionPolicyFileShare_updateDaily(t *testing.T) {
 	})
 }
 
-func (t BackupProtectionPolicyFileShareResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t BackupProtectionPolicyFileShareResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := azure.ParseAzureResourceID(state.ID)
 	if err != nil {
 		return nil, err
@@ -164,24 +163,24 @@ resource "azurerm_backup_policy_file_share" "import" {
 `, template)
 }
 
-func checkAccBackupProtectionPolicyFileShare_basicDaily(resourceName string, ri int) resource.TestCheckFunc {
-	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("acctest-PFS-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "resource_group_name", fmt.Sprintf("acctestRG-backup-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "recovery_vault_name", fmt.Sprintf("acctest-RSV-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "backup.0.frequency", "Daily"),
-		resource.TestCheckResourceAttr(resourceName, "backup.0.time", "23:00"),
-		resource.TestCheckResourceAttr(resourceName, "retention_daily.0.count", "10"),
+func checkAccBackupProtectionPolicyFileShare_basicDaily(resourceName string, ri int) acceptance.TestCheckFunc {
+	return acceptance.ComposeAggregateTestCheckFunc(
+		acceptance.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("acctest-PFS-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "resource_group_name", fmt.Sprintf("acctestRG-backup-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "recovery_vault_name", fmt.Sprintf("acctest-RSV-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "backup.0.frequency", "Daily"),
+		acceptance.TestCheckResourceAttr(resourceName, "backup.0.time", "23:00"),
+		acceptance.TestCheckResourceAttr(resourceName, "retention_daily.0.count", "10"),
 	)
 }
 
-func checkAccBackupProtectionPolicyFileShare_updateDaily(resourceName string, ri int) resource.TestCheckFunc {
-	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("acctest-PFS-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "resource_group_name", fmt.Sprintf("acctestRG-backup-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "recovery_vault_name", fmt.Sprintf("acctest-RSV-%d", ri)),
-		resource.TestCheckResourceAttr(resourceName, "backup.0.frequency", "Daily"),
-		resource.TestCheckResourceAttr(resourceName, "backup.0.time", "23:30"),
-		resource.TestCheckResourceAttr(resourceName, "retention_daily.0.count", "180"),
+func checkAccBackupProtectionPolicyFileShare_updateDaily(resourceName string, ri int) acceptance.TestCheckFunc {
+	return acceptance.ComposeAggregateTestCheckFunc(
+		acceptance.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("acctest-PFS-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "resource_group_name", fmt.Sprintf("acctestRG-backup-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "recovery_vault_name", fmt.Sprintf("acctest-RSV-%d", ri)),
+		acceptance.TestCheckResourceAttr(resourceName, "backup.0.frequency", "Daily"),
+		acceptance.TestCheckResourceAttr(resourceName, "backup.0.time", "23:30"),
+		acceptance.TestCheckResourceAttr(resourceName, "retention_daily.0.count", "180"),
 	)
 }

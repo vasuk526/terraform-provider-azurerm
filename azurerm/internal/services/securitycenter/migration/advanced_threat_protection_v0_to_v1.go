@@ -5,29 +5,29 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/securitycenter/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-func AdvancedThreatProtectionV0ToV1() schema.StateUpgrader {
-	return schema.StateUpgrader{
+func AdvancedThreatProtectionV0ToV1() pluginsdk.StateUpgrader {
+	return pluginsdk.StateUpgrader{
 		Version: 0,
 		Type:    advancedThreatProtectionV0Schema().CoreConfigSchema().ImpliedType(),
 		Upgrade: advancedThreadProtectionV0toV1Upgrade,
 	}
 }
 
-func advancedThreatProtectionV0Schema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
+func advancedThreatProtectionV0Schema() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
+		Schema: map[string]*pluginsdk.Schema{
 			"target_resource_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
 			"enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Required: true,
 			},
 		},
