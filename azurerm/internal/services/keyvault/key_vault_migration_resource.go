@@ -5,10 +5,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/mgmt/2019-09-01/keyvault"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
 func resourceKeyVaultMigrateState(v int, is *terraform.InstanceState, _ interface{}) (*terraform.InstanceState, error) {
@@ -40,9 +39,9 @@ func migrateKeyVaultStateV0toV1(is *terraform.InstanceState) (*terraform.Instanc
 
 func migrateKeyVaultStateV0toV1AccessPolicies(is *terraform.InstanceState) error {
 	keyVaultSchema := resourceKeyVault().Schema
-	reader := &schema.MapFieldReader{
+	reader := &pluginsdk.MapFieldReader{
 		Schema: keyVaultSchema,
-		Map:    schema.BasicMapReader(is.Attributes),
+		Map:    pluginsdk.BasicMapReader(is.Attributes),
 	}
 
 	// parse and update the existing data
@@ -153,7 +152,7 @@ func migrateKeyVaultStateV0toV1AccessPolicies(is *terraform.InstanceState) error
 	}
 
 	// write this out
-	writer := schema.MapFieldWriter{
+	writer := pluginsdk.MapFieldWriter{
 		Schema: keyVaultSchema,
 	}
 	if err := writer.WriteField([]string{"access_policy"}, outputAccessPolicies); err != nil {

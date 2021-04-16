@@ -55,7 +55,7 @@ func ParseAzureAutomationVariableValue(resource string, input *string) (interfac
 	return value, nil
 }
 
-func resourceAutomationVariableCommonSchema(attType schema.ValueType, validateFunc schema.SchemaValidateFunc) map[string]*pluginsdk.Schema {
+func resourceAutomationVariableCommonSchema(attType pluginsdk.ValueType, validateFunc schema.SchemaValidateFunc) map[string]*pluginsdk.Schema {
 	return map[string]*pluginsdk.Schema{
 		"resource_group_name": azure.SchemaResourceGroupName(),
 
@@ -92,7 +92,7 @@ func resourceAutomationVariableCommonSchema(attType schema.ValueType, validateFu
 	}
 }
 
-func datasourceAutomationVariableCommonSchema(attType schema.ValueType) map[string]*pluginsdk.Schema {
+func datasourceAutomationVariableCommonSchema(attType pluginsdk.ValueType) map[string]*pluginsdk.Schema {
 	return map[string]*pluginsdk.Schema{
 		"resource_group_name": azure.SchemaResourceGroupName(),
 

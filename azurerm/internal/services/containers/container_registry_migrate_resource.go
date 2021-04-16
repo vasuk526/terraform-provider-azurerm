@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -63,9 +63,9 @@ func migrateContainerRegistryStateV1toV2(is *terraform.InstanceState, meta inter
 }
 
 func updateV1ToV2StorageAccountName(is *terraform.InstanceState, meta interface{}) error {
-	reader := &schema.MapFieldReader{
+	reader := &pluginsdk.MapFieldReader{
 		Schema: resourceContainerRegistry().Schema,
-		Map:    schema.BasicMapReader(is.Attributes),
+		Map:    pluginsdk.BasicMapReader(is.Attributes),
 	}
 
 	result, err := reader.ReadField([]string{"storage_account"})
