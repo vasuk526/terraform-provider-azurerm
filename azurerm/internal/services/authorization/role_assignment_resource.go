@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -279,7 +280,7 @@ func resourceArmRoleAssignmentDelete(d *pluginsdk.ResourceData, meta interface{}
 	return nil
 }
 
-func retryRoleAssignmentsClient(d *pluginsdk.ResourceData, scope string, name string, properties authorization.RoleAssignmentCreateParameters, meta interface{}) func() *resource.RetryError {
+func retryRoleAssignmentsClient(d *pluginsdk.ResourceData, scope string, name string, properties authorization.RoleAssignmentCreateParameters, meta interface{}) func() *pluginsdk.RetryError {
 	return func() *resource.RetryError {
 		roleAssignmentsClient := meta.(*clients.Client).Authorization.RoleAssignmentsClient
 		ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
@@ -288,20 +289,20 @@ func retryRoleAssignmentsClient(d *pluginsdk.ResourceData, scope string, name st
 		resp, err := roleAssignmentsClient.Create(ctx, scope, name, properties)
 		if err != nil {
 			if utils.ResponseErrorIsRetryable(err) {
-				return resource.RetryableError(err)
+				return pluginsdk.RetryableError(err)
 			} else if utils.ResponseWasStatusCode(resp.Response, 400) && strings.Contains(err.Error(), "PrincipalNotFound") {
 				// When waiting for service principal to become available
-				return resource.RetryableError(err)
+				return pluginsdk.RetryableError(err)
 			}
 
-			return resource.NonRetryableError(err)
+			return pluginsdk.NonRetryableError(err)
 		}
 
 		if resp.ID == nil {
-			return resource.NonRetryableError(fmt.Errorf("creation of Role Assignment %q did not return an id value", name))
+			return pluginsdk.NonRetryableError(fmt.Errorf("creation of Role Assignment %q did not return an id value", name))
 		}
 
-		stateConf := &resource.StateChangeConf{
+		stateConf := &pluginsdk.StateChangeConf{
 			Pending: []string{
 				"pending",
 			},
@@ -315,7 +316,7 @@ func retryRoleAssignmentsClient(d *pluginsdk.ResourceData, scope string, name st
 		}
 
 		if _, err := stateConf.WaitForState(); err != nil {
-			return resource.NonRetryableError(fmt.Errorf("failed waiting for Role Assignment %q to finish replicating: %+v", name, err))
+			return pluginsdk.NonRetryableError(fmt.Errorf("failed waiting for Role Assignment %q to finish replicating: %+v", name, err))
 		}
 
 		return nil
@@ -341,7 +342,7 @@ func parseRoleAssignmentId(input string) (*roleAssignmentId, error) {
 	return &id, nil
 }
 
-func roleAssignmentCreateStateRefreshFunc(ctx context.Context, client *authorization.RoleAssignmentsClient, roleID string) resource.StateRefreshFunc {
+func roleAssignmentCreateStateRefreshFunc(ctx context.Context, client *authorization.RoleAssignmentsClient, roleID string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.GetByID(ctx, roleID)
 		if err != nil {

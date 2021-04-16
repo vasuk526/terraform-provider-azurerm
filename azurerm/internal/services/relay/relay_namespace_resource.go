@@ -12,7 +12,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/relay/mgmt/2017-04-01/relay"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -210,7 +209,7 @@ func resourceRelayNamespaceDelete(d *pluginsdk.ResourceData, meta interface{}) e
 
 	// we can't make use of the Future here due to a bug where 404 isn't tracked as Successful
 	log.Printf("[DEBUG] Waiting for Relay Namespace %q (Resource Group %q) to be deleted", id.Name, id.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{"Pending"},
 		Target:     []string{"Deleted"},
 		Refresh:    relayNamespaceDeleteRefreshFunc(ctx, client, id.ResourceGroup, id.Name),
@@ -225,7 +224,7 @@ func resourceRelayNamespaceDelete(d *pluginsdk.ResourceData, meta interface{}) e
 	return nil
 }
 
-func relayNamespaceDeleteRefreshFunc(ctx context.Context, client *relay.NamespacesClient, resourceGroupName string, name string) resource.StateRefreshFunc {
+func relayNamespaceDeleteRefreshFunc(ctx context.Context, client *relay.NamespacesClient, resourceGroupName string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroupName, name)
 		if err != nil {

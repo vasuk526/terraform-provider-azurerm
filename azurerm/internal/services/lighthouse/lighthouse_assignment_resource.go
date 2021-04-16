@@ -8,7 +8,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/managedservices/mgmt/2019-06-01/managedservices"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/lighthouse/parse"
@@ -159,7 +158,7 @@ func resourceLighthouseAssignmentDelete(d *pluginsdk.ResourceData, meta interfac
 		return fmt.Errorf("Error deleting Lighthouse Assignment %q at Scope %q: %+v", id.Name, id.Scope, err)
 	}
 
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{"Deleting"},
 		Target:     []string{"Deleted"},
 		Refresh:    lighthouseAssignmentDeleteRefreshFunc(ctx, client, id.Scope, id.Name),
@@ -174,7 +173,7 @@ func resourceLighthouseAssignmentDelete(d *pluginsdk.ResourceData, meta interfac
 	return nil
 }
 
-func lighthouseAssignmentDeleteRefreshFunc(ctx context.Context, client *managedservices.RegistrationAssignmentsClient, scope string, lighthouseAssignmentName string) resource.StateRefreshFunc {
+func lighthouseAssignmentDeleteRefreshFunc(ctx context.Context, client *managedservices.RegistrationAssignmentsClient, scope string, lighthouseAssignmentName string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		expandLighthouseDefinition := true
 		res, err := client.Get(ctx, scope, lighthouseAssignmentName, &expandLighthouseDefinition)

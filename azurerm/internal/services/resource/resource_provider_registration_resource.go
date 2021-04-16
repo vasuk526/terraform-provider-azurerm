@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2017-03-09/resources/mgmt/resources"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/resourceproviders"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/sdk"
@@ -89,7 +88,7 @@ func (r ResourceProviderRegistrationResource) Create() sdk.ResourceFunc {
 
 			// TODO: @tombuildsstuff - expose a nicer means of doing this in the SDK
 			log.Printf("[DEBUG] Waiting for Resource Provider %q to finish registering..", resourceId.ResourceProvider)
-			stateConf := &resource.StateChangeConf{
+			stateConf := &pluginsdk.StateChangeConf{
 				Pending:      []string{"Processing"},
 				Target:       []string{"Registered"},
 				Refresh:      r.registerRefreshFunc(ctx, client, resourceId.ResourceProvider),
@@ -167,7 +166,7 @@ func (r ResourceProviderRegistrationResource) Delete() sdk.ResourceFunc {
 
 			// TODO: @tombuildsstuff - we should likely expose something in the SDK to make this easier
 
-			stateConf := &resource.StateChangeConf{
+			stateConf := &pluginsdk.StateChangeConf{
 				Pending:    []string{"Processing"},
 				Target:     []string{"Unregistered"},
 				Refresh:    r.unregisterRefreshFunc(ctx, client, id.ResourceProvider),
@@ -242,7 +241,7 @@ to 'true' in the Provider block) to avoid conflicting with Terraform.`
 	return nil
 }
 
-func (r ResourceProviderRegistrationResource) registerRefreshFunc(ctx context.Context, client *resources.ProvidersClient, resourceProviderNamespace string) resource.StateRefreshFunc {
+func (r ResourceProviderRegistrationResource) registerRefreshFunc(ctx context.Context, client *resources.ProvidersClient, resourceProviderNamespace string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, resourceProviderNamespace, "")
 		if err != nil {
@@ -257,7 +256,7 @@ func (r ResourceProviderRegistrationResource) registerRefreshFunc(ctx context.Co
 	}
 }
 
-func (r ResourceProviderRegistrationResource) unregisterRefreshFunc(ctx context.Context, client *resources.ProvidersClient, resourceProvider string) resource.StateRefreshFunc {
+func (r ResourceProviderRegistrationResource) unregisterRefreshFunc(ctx context.Context, client *resources.ProvidersClient, resourceProvider string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, resourceProvider, "")
 		if err != nil {

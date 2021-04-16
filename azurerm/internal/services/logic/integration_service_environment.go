@@ -11,7 +11,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/logic/mgmt/2019-05-01/logic"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -307,7 +306,7 @@ func resourceIntegrationServiceEnvironmentDelete(d *pluginsdk.ResourceData, meta
 		return fmt.Errorf("deleting Integration Service Environment %q (Resource Group %q): %+v", name, resourceGroup, err)
 	}
 
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{string(logic.WorkflowProvisioningStateDeleting)},
 		Target:                    []string{string(logic.WorkflowProvisioningStateDeleted)},
 		MinTimeout:                5 * time.Minute,
@@ -405,7 +404,7 @@ func getSubnetIDs(input *logic.IntegrationServiceEnvironment) []interface{} {
 	return results
 }
 
-func integrationServiceEnvironmentDeleteStateRefreshFunc(ctx context.Context, client *clients.Client, iseID string, subnetIDs []interface{}) resource.StateRefreshFunc {
+func integrationServiceEnvironmentDeleteStateRefreshFunc(ctx context.Context, client *clients.Client, iseID string, subnetIDs []interface{}) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		linkExists, err := linkExists(ctx, client, iseID, subnetIDs)
 		if err != nil {

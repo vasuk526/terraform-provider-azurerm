@@ -74,7 +74,7 @@ func resourceApiManagementPolicyCreateUpdate(d *pluginsdk.ResourceData, meta int
 
 	/*
 		Other resources would have a check for d.IsNewResource() at this location, and would error out using `tf.ImportAsExistsError` if the resource already existed.
-		However, this is a sub-resource, and the API always returns a policy when queried, either a default policy or one configured by the user or by this resource.
+		However, this is a sub-resource, and the API always returns a policy when queried, either a default policy or one configured by the user or by this pluginsdk.
 		Instead of the usual check, the resource documentation clearly states that any existing policy will be overwritten if the resource is used.
 	*/
 

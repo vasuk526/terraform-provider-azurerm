@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/redis/mgmt/2020-06-01/redis"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -125,7 +124,7 @@ func resourceRedisLinkedServerCreate(d *pluginsdk.ResourceData, meta interface{}
 	}
 
 	log.Printf("[DEBUG] Waiting for Linked Server %q (Redis Cache %q / Resource Group %q) to become available", resourceId.Name, resourceId.RediName, resourceId.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{"Linking", "Updating", "Creating", "Syncing"},
 		Target:     []string{"Succeeded"},
 		Refresh:    redisLinkedServerStateRefreshFunc(ctx, client, resourceId),
@@ -204,7 +203,7 @@ func resourceRedisLinkedServerDelete(d *pluginsdk.ResourceData, meta interface{}
 	// No LinkedServerDeleteFuture
 	// https://github.com/Azure/azure-sdk-for-go/issues/12159
 	log.Printf("[DEBUG] Waiting for Linked Server %q (Redis Cache %q / Resource Group %q) to be eventually deleted", id.Name, id.RediName, id.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"Exists"},
 		Target:                    []string{"NotFound"},
 		Refresh:                   redisLinkedServerDeleteStateRefreshFunc(ctx, client, *id),
@@ -220,7 +219,7 @@ func resourceRedisLinkedServerDelete(d *pluginsdk.ResourceData, meta interface{}
 	return nil
 }
 
-func redisLinkedServerStateRefreshFunc(ctx context.Context, client *redis.LinkedServerClient, id parse.LinkedServerId) resource.StateRefreshFunc {
+func redisLinkedServerStateRefreshFunc(ctx context.Context, client *redis.LinkedServerClient, id parse.LinkedServerId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, id.ResourceGroup, id.RediName, id.Name)
 		if err != nil {
@@ -231,7 +230,7 @@ func redisLinkedServerStateRefreshFunc(ctx context.Context, client *redis.Linked
 	}
 }
 
-func redisLinkedServerDeleteStateRefreshFunc(ctx context.Context, client *redis.LinkedServerClient, id parse.LinkedServerId) resource.StateRefreshFunc {
+func redisLinkedServerDeleteStateRefreshFunc(ctx context.Context, client *redis.LinkedServerClient, id parse.LinkedServerId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, id.ResourceGroup, id.RediName, id.Name)
 		if err != nil {

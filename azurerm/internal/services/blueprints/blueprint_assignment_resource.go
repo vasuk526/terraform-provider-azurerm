@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/blueprint/mgmt/2018-11-01-preview/blueprint"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/structure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
@@ -191,7 +190,7 @@ func resourceBlueprintAssignmentCreateUpdate(d *pluginsdk.ResourceData, meta int
 		return err
 	}
 
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{
 			string(blueprint.Waiting),
 			string(blueprint.Validating),
@@ -319,7 +318,7 @@ func resourceBlueprintAssignmentDelete(d *pluginsdk.ResourceData, meta interface
 		return fmt.Errorf("failed to delete Blueprint Assignment %q from scope %q: %+v", id.Name, id.Scope, err)
 	}
 
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{
 			string(blueprint.Waiting),
 			string(blueprint.Validating),

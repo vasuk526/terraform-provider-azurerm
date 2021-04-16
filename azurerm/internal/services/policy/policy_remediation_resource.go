@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/policyinsights/mgmt/2019-10-01-preview/policyinsights"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/policy/parse"
@@ -223,7 +222,7 @@ func resourceArmPolicyRemediationDelete(d *pluginsdk.ResourceData, meta interfac
 		}
 
 		log.Printf("[DEBUG] waiting for the Policy Remediation %q (Scope %q) to be canceled", id.Name, id.ScopeId())
-		stateConf := &resource.StateChangeConf{
+		stateConf := &pluginsdk.StateChangeConf{
 			Pending: []string{"Cancelling"},
 			Target: []string{
 				"Succeeded", "Canceled", "Failed",
@@ -276,7 +275,7 @@ func cancelRemediation(ctx context.Context, client *policyinsights.RemediationsC
 	}
 }
 
-func policyRemediationCancellationRefreshFunc(ctx context.Context, client *policyinsights.RemediationsClient, name string, scopeId parse.PolicyScopeId) resource.StateRefreshFunc {
+func policyRemediationCancellationRefreshFunc(ctx context.Context, client *policyinsights.RemediationsClient, name string, scopeId parse.PolicyScopeId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := RemediationGetAtScope(ctx, client, name, scopeId)
 		if err != nil {

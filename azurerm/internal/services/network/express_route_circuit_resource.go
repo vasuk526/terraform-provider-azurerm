@@ -8,7 +8,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -223,7 +222,7 @@ func resourceExpressRouteCircuitCreateUpdate(d *pluginsdk.ResourceData, meta int
 
 	// API has bug, which appears to be eventually consistent on creation. Tracked by this issue: https://github.com/Azure/azure-rest-api-specs/issues/10148
 	log.Printf("[DEBUG] Waiting for Express Route Circuit %q (Resource Group %q) to be able to be queried", name, resGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"NotFound"},
 		Target:                    []string{"Exists"},
 		Refresh:                   expressRouteCircuitCreationRefreshFunc(ctx, client, resGroup, name),
@@ -346,7 +345,7 @@ func flattenExpressRouteCircuitSku(sku *network.ExpressRouteCircuitSku) []interf
 	}
 }
 
-func expressRouteCircuitCreationRefreshFunc(ctx context.Context, client *network.ExpressRouteCircuitsClient, resGroup, name string) resource.StateRefreshFunc {
+func expressRouteCircuitCreationRefreshFunc(ctx context.Context, client *network.ExpressRouteCircuitsClient, resGroup, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resGroup, name)
 		if err != nil {

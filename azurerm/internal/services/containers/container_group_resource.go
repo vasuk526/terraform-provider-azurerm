@@ -10,7 +10,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/containerinstance/mgmt/2019-12-01/containerinstance"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -739,7 +738,7 @@ func resourceContainerGroupDelete(d *pluginsdk.ResourceData, meta interface{}) e
 
 		// TODO: remove when https://github.com/Azure/azure-sdk-for-go/issues/5082 has been fixed
 		log.Printf("[DEBUG] Waiting for Container Group %q (Resource Group %q) to be finish deleting", name, resourceGroup)
-		stateConf := &resource.StateChangeConf{
+		stateConf := &pluginsdk.StateChangeConf{
 			Pending:                   []string{"Attached"},
 			Target:                    []string{"Detached"},
 			Refresh:                   containerGroupEnsureDetachedFromNetworkProfileRefreshFunc(ctx, networkProfileClient, networkProfileResourceGroup, networkProfileName, resourceGroup, name),
@@ -759,7 +758,7 @@ func resourceContainerGroupDelete(d *pluginsdk.ResourceData, meta interface{}) e
 func containerGroupEnsureDetachedFromNetworkProfileRefreshFunc(ctx context.Context,
 	client *network.ProfilesClient,
 	networkProfileResourceGroup, networkProfileName,
-	containerResourceGroupName, containerName string) resource.StateRefreshFunc {
+	containerResourceGroupName, containerName string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		profile, err := client.Get(ctx, networkProfileResourceGroup, networkProfileName, "")
 		if err != nil {

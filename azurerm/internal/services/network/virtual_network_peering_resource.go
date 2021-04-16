@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -221,8 +222,8 @@ func getVirtualNetworkPeeringProperties(d *pluginsdk.ResourceData) *network.Virt
 	}
 }
 
-func retryVnetPeeringsClientCreateUpdate(d *pluginsdk.ResourceData, resGroup string, vnetName string, name string, peer network.VirtualNetworkPeering, meta interface{}) func() *resource.RetryError {
-	return func() *resource.RetryError {
+func retryVnetPeeringsClientCreateUpdate(d *pluginsdk.ResourceData, resGroup string, vnetName string, name string, peer network.VirtualNetworkPeering, meta interface{}) func() *pluginsdk.RetryError {
+	return func() *pluginsdk.RetryError {
 		vnetPeeringsClient := meta.(*clients.Client).Network.VnetPeeringsClient
 		ctx, cancel := timeouts.ForCreateUpdate(meta.(*clients.Client).StopContext, d)
 		defer cancel()
@@ -230,17 +231,17 @@ func retryVnetPeeringsClientCreateUpdate(d *pluginsdk.ResourceData, resGroup str
 		future, err := vnetPeeringsClient.CreateOrUpdate(ctx, resGroup, vnetName, name, peer)
 		if err != nil {
 			if utils.ResponseErrorIsRetryable(err) {
-				return resource.RetryableError(err)
+				return pluginsdk.RetryableError(err)
 			} else if future.Response().StatusCode == 400 && strings.Contains(err.Error(), "ReferencedResourceNotProvisioned") {
 				// Resource is not yet ready, this may be the case if the Vnet was just created or another peering was just initiated.
-				return resource.RetryableError(err)
+				return pluginsdk.RetryableError(err)
 			}
 
-			return resource.NonRetryableError(err)
+			return pluginsdk.NonRetryableError(err)
 		}
 
 		if err = future.WaitForCompletionRef(ctx, vnetPeeringsClient.Client); err != nil {
-			return resource.NonRetryableError(err)
+			return pluginsdk.NonRetryableError(err)
 		}
 
 		return nil

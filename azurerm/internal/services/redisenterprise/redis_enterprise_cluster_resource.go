@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/redisenterprise/mgmt/2021-03-01/redisenterprise"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -177,7 +176,7 @@ func resourceRedisEnterpriseClusterCreate(d *pluginsdk.ResourceData, meta interf
 	}
 
 	log.Printf("[DEBUG] Waiting for Redis Enterprise Cluster (Name %q / Resource Group %q) to become available", resourceId.RedisEnterpriseName, resourceId.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{"Creating", "Updating", "Enabling", "Deleting", "Disabling"},
 		Target:     []string{"Running"},
 		Refresh:    redisEnterpriseClusterStateRefreshFunc(ctx, client, resourceId),
@@ -292,7 +291,7 @@ func flattenRedisEnterpriseClusterSku(input *redisenterprise.Sku) *string {
 	return &skuName
 }
 
-func redisEnterpriseClusterStateRefreshFunc(ctx context.Context, client *redisenterprise.Client, id parse.RedisEnterpriseClusterId) resource.StateRefreshFunc {
+func redisEnterpriseClusterStateRefreshFunc(ctx context.Context, client *redisenterprise.Client, id parse.RedisEnterpriseClusterId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, id.ResourceGroup, id.RedisEnterpriseName)
 		if err != nil {

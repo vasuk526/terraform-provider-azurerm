@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2020-06-01/web"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	helpersValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -244,7 +243,7 @@ func resourceAppServiceEnvironmentCreate(d *pluginsdk.ResourceData, meta interfa
 		return fmt.Errorf("creating App Service Environment %q (Resource Group %q): %+v", name, resourceGroup, err)
 	}
 
-	createWait := resource.StateChangeConf{
+	createWait := pluginsdk.StateChangeConf{
 		Pending: []string{
 			string(web.ProvisioningStateInProgress),
 		},
@@ -317,7 +316,7 @@ func resourceAppServiceEnvironmentUpdate(d *pluginsdk.ResourceData, meta interfa
 		return fmt.Errorf("updating App Service Environment %q (Resource Group %q): %+v", id.HostingEnvironmentName, id.ResourceGroup, err)
 	}
 
-	updateWait := resource.StateChangeConf{
+	updateWait := pluginsdk.StateChangeConf{
 		Pending: []string{
 			string(web.ProvisioningStateInProgress),
 		},
@@ -426,7 +425,7 @@ func resourceAppServiceEnvironmentDelete(d *pluginsdk.ResourceData, meta interfa
 	return nil
 }
 
-func appServiceEnvironmentRefresh(ctx context.Context, client *web.AppServiceEnvironmentsClient, resourceGroup string, name string) resource.StateRefreshFunc {
+func appServiceEnvironmentRefresh(ctx context.Context, client *web.AppServiceEnvironmentsClient, resourceGroup string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		read, err := client.Get(ctx, resourceGroup, name)
 

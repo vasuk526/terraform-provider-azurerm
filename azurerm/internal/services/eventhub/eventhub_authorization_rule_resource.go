@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -102,26 +101,26 @@ func resourceEventHubAuthorizationRuleCreateUpdate(d *pluginsdk.ResourceData, me
 		},
 	}
 
-	return resource.Retry(d.Timeout(pluginsdk.TimeoutCreate), func() *resource.RetryError {
+	return pluginsdk.Retry(d.Timeout(pluginsdk.TimeoutCreate), func() *pluginsdk.RetryError {
 		if _, err := client.CreateOrUpdateAuthorizationRule(ctx, resourceGroup, namespaceName, eventHubName, name, parameters); err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error creating Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q): %+v", name, eventHubName, namespaceName, resourceGroup, err))
+			return pluginsdk.NonRetryableError(fmt.Errorf("Error creating Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q): %+v", name, eventHubName, namespaceName, resourceGroup, err))
 		}
 
 		read, err := client.GetAuthorizationRule(ctx, resourceGroup, namespaceName, eventHubName, name)
 		if err != nil {
 			if utils.ResponseWasNotFound(read.Response) {
-				return resource.RetryableError(fmt.Errorf("Expected instance of the Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) to be created but was in non existent state, retrying", name, eventHubName, namespaceName, resourceGroup))
+				return pluginsdk.RetryableError(fmt.Errorf("Expected instance of the Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) to be created but was in non existent state, retrying", name, eventHubName, namespaceName, resourceGroup))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Expected instance of Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) could not be found", name, eventHubName, namespaceName, resourceGroup))
+			return pluginsdk.NonRetryableError(fmt.Errorf("Expected instance of Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) could not be found", name, eventHubName, namespaceName, resourceGroup))
 		}
 
 		if read.ID == nil {
-			return resource.NonRetryableError(fmt.Errorf("Cannot read Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) ID", name, eventHubName, namespaceName, resourceGroup))
+			return pluginsdk.NonRetryableError(fmt.Errorf("Cannot read Authorization Rule %q (event Hub %q / Namespace %q / Resource Group %q) ID", name, eventHubName, namespaceName, resourceGroup))
 		}
 
 		d.SetId(*read.ID)
 
-		return resource.NonRetryableError(resourceEventHubAuthorizationRuleRead(d, meta))
+		return pluginsdk.NonRetryableError(resourceEventHubAuthorizationRuleRead(d, meta))
 	})
 }
 

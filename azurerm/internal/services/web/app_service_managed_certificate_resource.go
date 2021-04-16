@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2020-06-01/web"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/location"
@@ -161,7 +160,7 @@ func resourceAppServiceManagedCertificateCreateUpdate(d *pluginsdk.ResourceData,
 		}
 	}
 
-	certificateWait := &resource.StateChangeConf{
+	certificateWait := &pluginsdk.StateChangeConf{
 		Pending:    []string{"NotFound", "Unknown"},
 		Target:     []string{"Success"},
 		MinTimeout: 1 * time.Minute,

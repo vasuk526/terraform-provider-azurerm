@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/blueprint/mgmt/2018-11-01-preview/blueprint"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	msiparse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
@@ -61,7 +60,7 @@ func ManagedIdentitySchema() *pluginsdk.Schema {
 	}
 }
 
-func blueprintAssignmentCreateStateRefreshFunc(ctx context.Context, client *blueprint.AssignmentsClient, scope, name string) resource.StateRefreshFunc {
+func blueprintAssignmentCreateStateRefreshFunc(ctx context.Context, client *blueprint.AssignmentsClient, scope, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, scope, name)
 		if err != nil {
@@ -75,7 +74,7 @@ func blueprintAssignmentCreateStateRefreshFunc(ctx context.Context, client *blue
 	}
 }
 
-func blueprintAssignmentDeleteStateRefreshFunc(ctx context.Context, client *blueprint.AssignmentsClient, scope, name string) resource.StateRefreshFunc {
+func blueprintAssignmentDeleteStateRefreshFunc(ctx context.Context, client *blueprint.AssignmentsClient, scope, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, scope, name)
 		if err != nil {

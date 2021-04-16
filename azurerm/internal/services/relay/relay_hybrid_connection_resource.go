@@ -13,7 +13,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/relay/mgmt/2017-04-01/relay"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
@@ -163,7 +162,7 @@ func resourceArmRelayHybridConnectionDelete(d *pluginsdk.ResourceData, meta inte
 	}
 
 	log.Printf("[INFO] Waiting for Hybrid Connection %q (Namespace %q / Resource Group %q) to be deleted", id.Name, id.NamespaceName, id.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{"Pending"},
 		Target:     []string{"Deleted"},
 		Refresh:    hybridConnectionDeleteRefreshFunc(ctx, client, id.ResourceGroup, id.NamespaceName, id.Name),
@@ -178,7 +177,7 @@ func resourceArmRelayHybridConnectionDelete(d *pluginsdk.ResourceData, meta inte
 	return nil
 }
 
-func hybridConnectionDeleteRefreshFunc(ctx context.Context, client *relay.HybridConnectionsClient, resourceGroupName string, relayNamespace string, name string) resource.StateRefreshFunc {
+func hybridConnectionDeleteRefreshFunc(ctx context.Context, client *relay.HybridConnectionsClient, resourceGroupName string, relayNamespace string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroupName, relayNamespace, name)
 		if err != nil {

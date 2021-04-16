@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/automation/mgmt/2018-06-30-preview/automation"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -124,7 +123,7 @@ func resourceAutomationModuleCreateUpdate(d *pluginsdk.ResourceData, meta interf
 	}
 
 	// the API returns 'done' but it's not actually finished provisioning yet
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{
 			string(automation.ModuleProvisioningStateActivitiesStored),
 			string(automation.ModuleProvisioningStateConnectionTypeImported),

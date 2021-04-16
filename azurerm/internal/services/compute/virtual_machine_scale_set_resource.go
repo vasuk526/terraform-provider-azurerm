@@ -1108,7 +1108,7 @@ func resourceVirtualMachineScaleSetDelete(d *pluginsdk.ResourceData, meta interf
 	resGroup := id.ResourceGroup
 	name := id.Path["virtualMachineScaleSets"]
 
-	// @ArcturusZhang (mimicking from virtual_machine_resource.go): sending `nil` here omits this value from being sent
+	// @ArcturusZhang (mimicking from virtual_machine_pluginsdk.go): sending `nil` here omits this value from being sent
 	// which matches the previous behaviour - we're only splitting this out so it's clear why
 	var forceDeletion *bool = nil
 	future, err := client.Delete(ctx, resGroup, name, forceDeletion)

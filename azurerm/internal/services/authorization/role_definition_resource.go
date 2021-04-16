@@ -8,7 +8,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/authorization/azuresdkhacks"
@@ -186,7 +185,7 @@ func resourceArmRoleDefinitionCreate(d *pluginsdk.ResourceData, meta interface{}
 		if err != nil {
 			return err
 		}
-		stateConf := &resource.StateChangeConf{
+		stateConf := &pluginsdk.StateChangeConf{
 			Pending: []string{
 				"Pending",
 			},
@@ -262,7 +261,7 @@ func resourceArmRoleDefinitionUpdate(d *pluginsdk.ResourceData, meta interface{}
 	// but eventually switch to being the old create date and the new update date
 	// ergo we can can for the old create date and the new updated date
 	log.Printf("[DEBUG] Waiting for Role Definition %q (Scope %q) to settle down..", roleDefinitionId.RoleID, roleDefinitionId.Scope)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 12,
 		Delay:                     60 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -335,7 +334,7 @@ func resourceArmRoleDefinitionDelete(d *pluginsdk.ResourceData, meta interface{}
 		}
 	}
 	// Deletes are not instant and can take time to propagate
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{
 			"Pending",
 		},
@@ -356,7 +355,7 @@ func resourceArmRoleDefinitionDelete(d *pluginsdk.ResourceData, meta interface{}
 	return nil
 }
 
-func roleDefinitionEventualConsistencyUpdate(ctx context.Context, client azuresdkhacks.RoleDefinitionsWorkaroundClient, id parse.RoleDefinitionID, updateRequestDate string) resource.StateRefreshFunc {
+func roleDefinitionEventualConsistencyUpdate(ctx context.Context, client azuresdkhacks.RoleDefinitionsWorkaroundClient, id parse.RoleDefinitionID, updateRequestDate string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, id.Scope, id.RoleID)
 		if err != nil {
@@ -509,7 +508,7 @@ func flattenRoleDefinitionAssignableScopes(input *[]string) []interface{} {
 	return scopes
 }
 
-func roleDefinitionUpdateStateRefreshFunc(ctx context.Context, client *authorization.RoleDefinitionsClient, roleDefinitionId string) resource.StateRefreshFunc {
+func roleDefinitionUpdateStateRefreshFunc(ctx context.Context, client *authorization.RoleDefinitionsClient, roleDefinitionId string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.GetByID(ctx, roleDefinitionId)
 		if err != nil {
@@ -522,7 +521,7 @@ func roleDefinitionUpdateStateRefreshFunc(ctx context.Context, client *authoriza
 	}
 }
 
-func roleDefinitionDeleteStateRefreshFunc(ctx context.Context, client *authorization.RoleDefinitionsClient, roleDefinitionId string) resource.StateRefreshFunc {
+func roleDefinitionDeleteStateRefreshFunc(ctx context.Context, client *authorization.RoleDefinitionsClient, roleDefinitionId string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.GetByID(ctx, roleDefinitionId)
 		if err != nil {

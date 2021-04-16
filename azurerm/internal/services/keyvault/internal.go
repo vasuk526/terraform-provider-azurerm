@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/keyvault/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
@@ -40,7 +39,7 @@ func deleteAndOptionallyPurge(ctx context.Context, description string, shouldPur
 		return fmt.Errorf("deleting %s: %+v", description, err)
 	}
 	log.Printf("[DEBUG] Waiting for %s to finish deleting..", description)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{"InProgress"},
 		Target:  []string{"NotFound"},
 		Refresh: func() (interface{}, string, error) {
@@ -70,22 +69,22 @@ func deleteAndOptionallyPurge(ctx context.Context, description string, shouldPur
 	}
 
 	log.Printf("[DEBUG] Purging %s..", description)
-	err := resource.Retry(time.Until(timeout), func() *resource.RetryError {
+	err := pluginsdk.Retry(time.Until(timeout), func() *pluginsdk.RetryError {
 		_, err := helper.PurgeNestedItem(ctx)
 		if err == nil {
 			return nil
 		}
 		if strings.Contains(err.Error(), "is currently being deleted") {
-			return resource.RetryableError(fmt.Errorf("%s is currently being deleted, retrying", description))
+			return pluginsdk.RetryableError(fmt.Errorf("%s is currently being deleted, retrying", description))
 		}
-		return resource.NonRetryableError(fmt.Errorf("Error purging of %s : %+v", description, err))
+		return pluginsdk.NonRetryableError(fmt.Errorf("Error purging of %s : %+v", description, err))
 	})
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Waiting for %s to finish purging..", description)
-	stateConf = &resource.StateChangeConf{
+	stateConf = &pluginsdk.StateChangeConf{
 		Pending: []string{"InProgress"},
 		Target:  []string{"NotFound"},
 		Refresh: func() (interface{}, string, error) {
@@ -112,7 +111,7 @@ func deleteAndOptionallyPurge(ctx context.Context, description string, shouldPur
 	return nil
 }
 
-func keyVaultChildItemRefreshFunc(secretUri string) resource.StateRefreshFunc {
+func keyVaultChildItemRefreshFunc(secretUri string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("[DEBUG] Checking to see if KeyVault Secret %q is available..", secretUri)
 

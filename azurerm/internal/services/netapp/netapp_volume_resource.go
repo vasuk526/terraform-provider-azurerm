@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/netapp/mgmt/2020-09-01/netapp"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -554,7 +553,7 @@ func resourceNetAppVolumeDelete(d *pluginsdk.ResourceData, meta interface{}) err
 }
 
 func waitForVolumeCreation(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 5,
 		Delay:                     10 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -572,7 +571,7 @@ func waitForVolumeCreation(ctx context.Context, client *netapp.VolumesClient, id
 }
 
 func waitForReplAuthorization(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 5,
 		Delay:                     10 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -590,7 +589,7 @@ func waitForReplAuthorization(ctx context.Context, client *netapp.VolumesClient,
 }
 
 func waitForReplMirrorState(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, timeout time.Duration, desiredState string) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 5,
 		Delay:                     10 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -608,7 +607,7 @@ func waitForReplMirrorState(ctx context.Context, client *netapp.VolumesClient, i
 }
 
 func waitForReplicationDeletion(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 5,
 		Delay:                     10 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -626,7 +625,7 @@ func waitForReplicationDeletion(ctx context.Context, client *netapp.VolumesClien
 }
 
 func waitForVolumeDeletion(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		ContinuousTargetOccurence: 5,
 		Delay:                     10 * time.Second,
 		MinTimeout:                10 * time.Second,
@@ -643,7 +642,7 @@ func waitForVolumeDeletion(ctx context.Context, client *netapp.VolumesClient, id
 	return nil
 }
 
-func netappVolumeStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId) resource.StateRefreshFunc {
+func netappVolumeStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, id.ResourceGroup, id.NetAppAccountName, id.CapacityPoolName, id.Name)
 		if err != nil {
@@ -656,7 +655,7 @@ func netappVolumeStateRefreshFunc(ctx context.Context, client *netapp.VolumesCli
 	}
 }
 
-func netappVolumeReplicationMirrorStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, desiredState string) resource.StateRefreshFunc {
+func netappVolumeReplicationMirrorStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId, desiredState string) pluginsdk.StateRefreshFunc {
 	validStates := []string{"mirrored", "broken", "uninitialized"}
 
 	return func() (interface{}, string, error) {
@@ -685,7 +684,7 @@ func netappVolumeReplicationMirrorStateRefreshFunc(ctx context.Context, client *
 	}
 }
 
-func netappVolumeReplicationStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId) resource.StateRefreshFunc {
+func netappVolumeReplicationStateRefreshFunc(ctx context.Context, client *netapp.VolumesClient, id parse.VolumeId) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.ReplicationStatusMethod(ctx, id.ResourceGroup, id.NetAppAccountName, id.CapacityPoolName, id.Name)
 		if err != nil {

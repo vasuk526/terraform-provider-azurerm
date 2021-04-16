@@ -8,7 +8,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/mariadb/mgmt/2018-06-01/mariadb"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -98,7 +97,7 @@ func resourceMariaDbVirtualNetworkRuleCreateUpdate(d *pluginsdk.ResourceData, me
 
 	// Wait for the provisioning state to become ready
 	log.Printf("[DEBUG] Waiting for MariaDb Virtual Network Rule %q (MariaDb Server: %q, Resource Group: %q) to become ready", name, serverName, resourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"Initializing", "InProgress", "Unknown", "ResponseNotFound"},
 		Target:                    []string{"Ready"},
 		Refresh:                   mariaDbVirtualNetworkStateStatusCodeRefreshFunc(ctx, client, resourceGroup, serverName, name),
@@ -193,7 +192,7 @@ func resourceMariaDbVirtualNetworkRuleDelete(d *pluginsdk.ResourceData, meta int
 	return nil
 }
 
-func mariaDbVirtualNetworkStateStatusCodeRefreshFunc(ctx context.Context, client *mariadb.VirtualNetworkRulesClient, resourceGroup string, serverName string, name string) resource.StateRefreshFunc {
+func mariaDbVirtualNetworkStateStatusCodeRefreshFunc(ctx context.Context, client *mariadb.VirtualNetworkRulesClient, resourceGroup string, serverName string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, resourceGroup, serverName, name)
 		if err != nil {

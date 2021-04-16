@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/recoveryservices/mgmt/2019-05-13/backup"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -295,7 +294,7 @@ func resourceBackupProtectedFileShareDelete(d *pluginsdk.ResourceData, meta inte
 
 // nolint unused - linter mistakenly things this function isn't used?
 func resourceBackupProtectedFileShareWaitForOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string, d *pluginsdk.ResourceData) (backup.OperationStatus, error) {
-	state := &resource.StateChangeConf{
+	state := &pluginsdk.StateChangeConf{
 		MinTimeout: 10 * time.Second,
 		Delay:      10 * time.Second,
 		Pending:    []string{"InProgress"},
@@ -317,7 +316,7 @@ func resourceBackupProtectedFileShareWaitForOperation(ctx context.Context, clien
 	return resp.(backup.OperationStatus), nil
 }
 
-func resourceBackupProtectedFileShareCheckOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string) resource.StateRefreshFunc {
+func resourceBackupProtectedFileShareCheckOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, vaultName, resourceGroup, operationID)
 		if err != nil {

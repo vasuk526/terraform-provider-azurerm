@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/hdinsight/mgmt/2018-06-01/hdinsight"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/hdinsight/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
@@ -62,7 +61,7 @@ func hdinsightClusterUpdate(clusterKind string, readFunc pluginsdk.ReadFunc) plu
 			}
 		}
 
-		// The API can add an edge node but can't remove them without force newing the resource. We'll check for adding here
+		// The API can add an edge node but can't remove them without force newing the pluginsdk. We'll check for adding here
 		// and can come back to removing if that functionality gets added. https://feedback.azure.com/forums/217335-hdinsight/suggestions/5663773-start-stop-cluster-hdinsight?page=3&per_page=20
 		if clusterKind == "Hadoop" {
 			if d.HasChange("roles.0.edge_node") {
@@ -93,7 +92,7 @@ func hdinsightClusterUpdate(clusterKind string, readFunc pluginsdk.ReadFunc) plu
 
 				// we can't rely on the use of the Future here due to the node being successfully completed but now the cluster is applying those changes.
 				log.Printf("[DEBUG] Waiting for Hadoop Cluster to %q (Resource Group %q) to finish applying edge node", name, resourceGroup)
-				stateConf := &resource.StateChangeConf{
+				stateConf := &pluginsdk.StateChangeConf{
 					Pending:    []string{"AzureVMConfiguration", "Accepted", "HdInsightConfiguration"},
 					Target:     []string{"Running"},
 					Refresh:    hdInsightWaitForReadyRefreshFunc(ctx, client, resourceGroup, name),

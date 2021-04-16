@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/recoveryservices/mgmt/2019-05-13/backup"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -204,7 +203,7 @@ func resourceBackupProtectionContainerStorageAccountDelete(d *pluginsdk.Resource
 
 // nolint unused - linter mistakenly things this function isn't used?
 func resourceBackupProtectionContainerStorageAccountWaitForOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string, d *pluginsdk.ResourceData) (backup.OperationStatus, error) {
-	state := &resource.StateChangeConf{
+	state := &pluginsdk.StateChangeConf{
 		MinTimeout:                10 * time.Second,
 		Delay:                     10 * time.Second,
 		Pending:                   []string{"InProgress"},
@@ -227,7 +226,7 @@ func resourceBackupProtectionContainerStorageAccountWaitForOperation(ctx context
 	return resp.(backup.OperationStatus), nil
 }
 
-func resourceBackupProtectionContainerStorageAccountCheckOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string) resource.StateRefreshFunc {
+func resourceBackupProtectionContainerStorageAccountCheckOperation(ctx context.Context, client *backup.OperationStatusesClient, vaultName, resourceGroup, operationID string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, vaultName, resourceGroup, operationID)
 		if err != nil {

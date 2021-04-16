@@ -11,7 +11,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/iothub/mgmt/2020-03-01/devices"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -609,7 +608,7 @@ func resourceIotHubCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) err
 	if d.IsNewResource() {
 		timeout = pluginsdk.TimeoutCreate
 	}
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{"Activating", "Transitioning"},
 		Target:  []string{"Succeeded"},
 		Refresh: iothubStateRefreshFunc(ctx, client, resourceGroup, name),
@@ -745,7 +744,7 @@ func resourceIotHubDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	// when running acctest of `azurerm_iot_security_solution`, we found after delete the iot security solution, the iothub provisionState is `Transitioning`
 	// if we delete directly, the func `client.Delete` will throw error
 	// so first wait for the iotHub state become succeed
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{"Activating", "Transitioning"},
 		Target:  []string{"Succeeded"},
 		Refresh: iothubStateRefreshFunc(ctx, client, id.ResourceGroup, id.Name),
@@ -770,7 +769,7 @@ func resourceIotHubDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 func waitForIotHubToBeDeleted(ctx context.Context, client *devices.IotHubResourceClient, resourceGroup, name string, d *pluginsdk.ResourceData) error {
 	// we can't use the Waiter here since the API returns a 404 once it's deleted which is considered a polling status code..
 	log.Printf("[DEBUG] Waiting for IotHub (%q in Resource Group %q) to be deleted", name, resourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{"200"},
 		Target:  []string{"404"},
 		Refresh: iothubStateStatusCodeRefreshFunc(ctx, client, resourceGroup, name),
@@ -784,7 +783,7 @@ func waitForIotHubToBeDeleted(ctx context.Context, client *devices.IotHubResourc
 	return nil
 }
 
-func iothubStateRefreshFunc(ctx context.Context, client *devices.IotHubResourceClient, resourceGroup, name string) resource.StateRefreshFunc {
+func iothubStateRefreshFunc(ctx context.Context, client *devices.IotHubResourceClient, resourceGroup, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroup, name)
 
@@ -805,7 +804,7 @@ func iothubStateRefreshFunc(ctx context.Context, client *devices.IotHubResourceC
 	}
 }
 
-func iothubStateStatusCodeRefreshFunc(ctx context.Context, client *devices.IotHubResourceClient, resourceGroup, name string) resource.StateRefreshFunc {
+func iothubStateStatusCodeRefreshFunc(ctx context.Context, client *devices.IotHubResourceClient, resourceGroup, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroup, name)
 

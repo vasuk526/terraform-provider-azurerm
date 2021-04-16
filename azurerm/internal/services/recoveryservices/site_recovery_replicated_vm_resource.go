@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/recoveryservices/mgmt/2018-07-10/siterecovery"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -531,7 +530,7 @@ func resourceSiteRecoveryReplicatedVMDiskHash(v interface{}) int {
 
 func waitForReplicationToBeHealthy(d *pluginsdk.ResourceData, meta interface{}) (*siterecovery.ReplicationProtectedItem, error) {
 	log.Printf("Waiting for Site Recover to replicate VM.")
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Target:       []string{"Protected"},
 		Refresh:      waitForReplicationToBeHealthyRefreshFunc(d, meta),
 		PollInterval: time.Minute,
@@ -552,7 +551,7 @@ func waitForReplicationToBeHealthy(d *pluginsdk.ResourceData, meta interface{}) 
 	}
 }
 
-func waitForReplicationToBeHealthyRefreshFunc(d *pluginsdk.ResourceData, meta interface{}) resource.StateRefreshFunc {
+func waitForReplicationToBeHealthyRefreshFunc(d *pluginsdk.ResourceData, meta interface{}) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		id, err := azure.ParseAzureResourceID(d.Id())
 		if err != nil {

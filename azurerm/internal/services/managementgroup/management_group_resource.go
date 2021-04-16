@@ -10,7 +10,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/preview/resources/mgmt/2018-03-01-preview/managementgroups"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/managementgroup/parse"
@@ -157,7 +156,7 @@ func resourceManagementGroupCreateUpdate(d *pluginsdk.ResourceData, meta interfa
 
 	// We have a potential race condition / consistency issue whereby the implicit role assignment for the SP may not be
 	// completed before the read-back here or an eventually consistent read is creating a temporary 403 error.
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{
 			"pending",
 		},
@@ -424,7 +423,7 @@ func determineManagementGroupSubscriptionsIdsToRemove(existing *[]managementgrou
 	return &subscriptionIdsToRemove, nil
 }
 
-func managementgroupCreateStateRefreshFunc(ctx context.Context, client *managementgroups.Client, groupName string) resource.StateRefreshFunc {
+func managementgroupCreateStateRefreshFunc(ctx context.Context, client *managementgroups.Client, groupName string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		resp, err := client.Get(ctx, groupName, "children", utils.Bool(true), "", managementGroupCacheControl)
 		if err != nil {

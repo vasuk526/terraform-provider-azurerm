@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/notificationhubs/mgmt/2017-04-01/notificationhubs"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -133,7 +132,7 @@ func resourceNotificationHubNamespaceCreateUpdate(d *pluginsdk.ResourceData, met
 	}
 
 	log.Printf("[DEBUG] Waiting for Notification Hub Namespace %q (Resource Group %q) to be created", name, resourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"404"},
 		Target:                    []string{"200"},
 		Refresh:                   notificationHubNamespaceStateRefreshFunc(ctx, client, resourceGroup, name),
@@ -228,7 +227,7 @@ func resourceNotificationHubNamespaceDelete(d *pluginsdk.ResourceData, meta inte
 	// the future returned from the Delete method is broken 50% of the time - let's poll ourselves for now
 	// Related Bug: https://github.com/Azure/azure-sdk-for-go/issues/2254
 	log.Printf("[DEBUG] Waiting for Notification Hub Namespace %q (Resource Group %q) to be deleted", id.Name, id.ResourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending: []string{"200", "202"},
 		Target:  []string{"404"},
 		Refresh: notificationHubNamespaceDeleteStateRefreshFunc(ctx, client, id.ResourceGroup, id.Name),
@@ -241,7 +240,7 @@ func resourceNotificationHubNamespaceDelete(d *pluginsdk.ResourceData, meta inte
 	return nil
 }
 
-func notificationHubNamespaceStateRefreshFunc(ctx context.Context, client *notificationhubs.NamespacesClient, resourceGroupName string, name string) resource.StateRefreshFunc {
+func notificationHubNamespaceStateRefreshFunc(ctx context.Context, client *notificationhubs.NamespacesClient, resourceGroupName string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroupName, name)
 		if err != nil {
@@ -256,7 +255,7 @@ func notificationHubNamespaceStateRefreshFunc(ctx context.Context, client *notif
 	}
 }
 
-func notificationHubNamespaceDeleteStateRefreshFunc(ctx context.Context, client *notificationhubs.NamespacesClient, resourceGroupName string, name string) resource.StateRefreshFunc {
+func notificationHubNamespaceDeleteStateRefreshFunc(ctx context.Context, client *notificationhubs.NamespacesClient, resourceGroupName string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroupName, name)
 		if err != nil {

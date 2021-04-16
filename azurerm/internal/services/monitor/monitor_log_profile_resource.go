@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/monitor/mgmt/2019-06-01/insights"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -146,7 +145,7 @@ func resourceLogProfileCreateUpdate(d *pluginsdk.ResourceData, meta interface{})
 	}
 
 	log.Printf("[DEBUG] Waiting for Log Profile %q to be provisioned", name)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"NotFound"},
 		Target:                    []string{"Available"},
 		Refresh:                   logProfilesCreateRefreshFunc(ctx, client, name),
@@ -306,7 +305,7 @@ func ParseLogProfileNameFromID(id string) (string, error) {
 	return components[6], nil
 }
 
-func logProfilesCreateRefreshFunc(ctx context.Context, client *insights.LogProfilesClient, name string) resource.StateRefreshFunc {
+func logProfilesCreateRefreshFunc(ctx context.Context, client *insights.LogProfilesClient, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		logProfile, err := client.Get(ctx, name)
 		if err != nil {

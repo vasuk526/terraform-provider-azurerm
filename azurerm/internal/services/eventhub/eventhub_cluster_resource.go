@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/parse"
@@ -144,23 +143,23 @@ func resourceEventHubClusterDelete(d *pluginsdk.ResourceData, meta interface{}) 
 	}
 
 	// The EventHub Cluster can't be deleted until four hours after creation so we'll keep retrying until it can be deleted.
-	return resource.Retry(d.Timeout(pluginsdk.TimeoutDelete), func() *resource.RetryError {
+	return pluginsdk.Retry(d.Timeout(pluginsdk.TimeoutDelete), func() *pluginsdk.RetryError {
 		future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
 		if err != nil {
 			if response.WasNotFound(future.Response()) {
 				return nil
 			}
 			if strings.Contains(err.Error(), "Cluster cannot be deleted until four hours after its creation time") || future.Response().StatusCode == 429 {
-				return resource.RetryableError(fmt.Errorf("expected eventhub cluster to be deleted but was in pending creation state, retrying"))
+				return pluginsdk.RetryableError(fmt.Errorf("expected eventhub cluster to be deleted but was in pending creation state, retrying"))
 			}
-			return resource.NonRetryableError(fmt.Errorf("issuing delete request for EventHub Cluster %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err))
+			return pluginsdk.NonRetryableError(fmt.Errorf("issuing delete request for EventHub Cluster %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err))
 		}
 
 		if err := future.WaitForCompletionRef(ctx, client.Client); err != nil {
 			if future.Response().StatusCode == 404 {
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("deleting EventHub Cluster %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err))
+			return pluginsdk.NonRetryableError(fmt.Errorf("deleting EventHub Cluster %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err))
 		}
 
 		return nil

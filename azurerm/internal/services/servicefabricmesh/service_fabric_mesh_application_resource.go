@@ -8,7 +8,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/servicefabricmesh/mgmt/2018-09-01-preview/servicefabricmesh"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -183,7 +182,7 @@ func resourceServiceFabricMeshApplicationCreateUpdate(d *pluginsdk.ResourceData,
 	}
 
 	log.Printf("[DEBUG] Waiting for Service Fabric Mesh Application %q (Resource Group %q) to finish creating", name, resourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{string(servicefabricmesh.Creating), string(servicefabricmesh.Upgrading), string(servicefabricmesh.Deleting)},
 		Target:                    []string{string(servicefabricmesh.Ready)},
 		Refresh:                   serviceFabricMeshApplicationCreateRefreshFunc(ctx, client, resourceGroup, name),
@@ -432,7 +431,7 @@ func flattenServiceFabricMeshApplicationCodePackageResourceLimits(input *service
 	return result
 }
 
-func serviceFabricMeshApplicationCreateRefreshFunc(ctx context.Context, client *servicefabricmesh.ApplicationClient, resourceGroup string, name string) resource.StateRefreshFunc {
+func serviceFabricMeshApplicationCreateRefreshFunc(ctx context.Context, client *servicefabricmesh.ApplicationClient, resourceGroup string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroup, name)
 		if err != nil {

@@ -12,7 +12,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/mgmt/2019-09-01/keyvault"
 	"github.com/gofrs/uuid"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	commonValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
@@ -374,7 +373,7 @@ func resourceKeyVaultCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	if props := read.Properties; props != nil {
 		if vault := props.VaultURI; vault != nil {
 			log.Printf("[DEBUG] Waiting for %s to become available", id)
-			stateConf := &resource.StateChangeConf{
+			stateConf := &pluginsdk.StateChangeConf{
 				Pending:                   []string{"pending"},
 				Target:                    []string{"available"},
 				Refresh:                   keyVaultRefreshFunc(*vault),
@@ -799,7 +798,7 @@ func resourceKeyVaultDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func keyVaultRefreshFunc(vaultUri string) resource.StateRefreshFunc {
+func keyVaultRefreshFunc(vaultUri string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("[DEBUG] Checking to see if KeyVault %q is available..", vaultUri)
 

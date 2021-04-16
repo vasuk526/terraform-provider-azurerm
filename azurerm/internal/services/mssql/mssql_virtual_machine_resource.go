@@ -9,7 +9,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/sqlvirtualmachine/mgmt/2017-03-01-preview/sqlvirtualmachine"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 
@@ -400,7 +399,7 @@ func resourceMsSqlVirtualMachineCreateUpdate(d *pluginsdk.ResourceData, meta int
 	// See: https://github.com/Azure/azure-rest-api-specs/issues/12818
 	if autoBackup := d.Get("auto_backup"); (d.IsNewResource() && len(autoBackup.([]interface{})) > 0) || (!d.IsNewResource() && d.HasChange("auto_backup")) {
 		log.Printf("[DEBUG] Waiting for SQL Virtual Machine %q AutoBackupSettings to take effect", d.Id())
-		stateConf := &resource.StateChangeConf{
+		stateConf := &pluginsdk.StateChangeConf{
 			Pending:                   []string{"Retry", "Pending"},
 			Target:                    []string{"Updated"},
 			Refresh:                   resourceMsSqlVirtualMachineAutoBackupSettingsRefreshFunc(ctx, client, d),
@@ -505,7 +504,7 @@ func resourceMsSqlVirtualMachineDelete(d *pluginsdk.ResourceData, meta interface
 	return nil
 }
 
-func resourceMsSqlVirtualMachineAutoBackupSettingsRefreshFunc(ctx context.Context, client *sqlvirtualmachine.SQLVirtualMachinesClient, d *pluginsdk.ResourceData) resource.StateRefreshFunc {
+func resourceMsSqlVirtualMachineAutoBackupSettingsRefreshFunc(ctx context.Context, client *sqlvirtualmachine.SQLVirtualMachinesClient, d *pluginsdk.ResourceData) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		id, err := parse.SqlVirtualMachineID(d.Id())
 		if err != nil {

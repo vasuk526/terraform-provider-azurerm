@@ -12,7 +12,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-09-01/policy"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/structure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -340,7 +339,7 @@ func resourceArmPolicySetDefinitionCreate(d *pluginsdk.ResourceData, meta interf
 
 	// Policy Definitions are eventually consistent; wait for them to stabilize
 	log.Printf("[DEBUG] Waiting for Policy Set Definition %q to become available", name)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"404"},
 		Target:                    []string{"200"},
 		Refresh:                   policySetDefinitionRefreshFunc(ctx, client, name, managementGroupName),
@@ -580,7 +579,7 @@ func resourceArmPolicySetDefinitionDelete(d *pluginsdk.ResourceData, meta interf
 	return nil
 }
 
-func policySetDefinitionRefreshFunc(ctx context.Context, client *policy.SetDefinitionsClient, name, managementGroupId string) resource.StateRefreshFunc {
+func policySetDefinitionRefreshFunc(ctx context.Context, client *policy.SetDefinitionsClient, name, managementGroupId string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := getPolicySetDefinitionByName(ctx, client, name, managementGroupId)
 		if err != nil {

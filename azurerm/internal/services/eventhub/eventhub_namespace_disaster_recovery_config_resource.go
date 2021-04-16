@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/eventhub/mgmt/2018-01-01-preview/eventhub"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -250,7 +249,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *pluginsdk.Resource
 	}
 
 	// no future for deletion so wait for it to vanish
-	deleteWait := &resource.StateChangeConf{
+	deleteWait := &pluginsdk.StateChangeConf{
 		Pending:    []string{"200"},
 		Target:     []string{"404"},
 		MinTimeout: 30 * time.Second,
@@ -274,7 +273,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *pluginsdk.Resource
 
 	// it can take some time for the name to become available again
 	// this is mainly here 	to enable updating the resource in place
-	nameFreeWait := &resource.StateChangeConf{
+	nameFreeWait := &pluginsdk.StateChangeConf{
 		Pending:    []string{"NameInUse"},
 		Target:     []string{"None"},
 		MinTimeout: 30 * time.Second,
@@ -297,7 +296,7 @@ func resourceEventHubNamespaceDisasterRecoveryConfigDelete(d *pluginsdk.Resource
 }
 
 func resourceEventHubNamespaceDisasterRecoveryConfigWaitForState(ctx context.Context, client *eventhub.DisasterRecoveryConfigsClient, resourceGroup, namespaceName, name string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:    []string{string(eventhub.ProvisioningStateDRAccepted)},
 		Target:     []string{string(eventhub.ProvisioningStateDRSucceeded)},
 		MinTimeout: 30 * time.Second,

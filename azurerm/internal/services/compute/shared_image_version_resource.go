@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -87,7 +86,7 @@ func resourceSharedImageVersion() *pluginsdk.Resource {
 						// The Service API doesn't support to update `storage_account_type`. So it has to recreate the resource for updating `storage_account_type`.
 						// However, `ForceNew` cannot be used since resource would be recreated while adding or removing `target_region`.
 						// And `CustomizeDiff` also cannot be used since it doesn't support in a `Set`.
-						// So currently terraform would directly return the error message from Service API while updating this property. If this property needs to be updated, please recreate this resource.
+						// So currently terraform would directly return the error message from Service API while updating this property. If this property needs to be updated, please recreate this pluginsdk.
 						"storage_account_type": {
 							Type:     pluginsdk.TypeString,
 							Optional: true,
@@ -275,7 +274,7 @@ func resourceSharedImageVersionDelete(d *pluginsdk.ResourceData, meta interface{
 	// @tombuildsstuff: there appears to be an eventual consistency issue here
 	timeout, _ := ctx.Deadline()
 	log.Printf("[DEBUG] Waiting for %s to be eventually deleted", *id)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"Exists"},
 		Target:                    []string{"NotFound"},
 		Refresh:                   sharedImageVersionDeleteStateRefreshFunc(ctx, client, *id),
@@ -291,7 +290,7 @@ func resourceSharedImageVersionDelete(d *pluginsdk.ResourceData, meta interface{
 	return nil
 }
 
-func sharedImageVersionDeleteStateRefreshFunc(ctx context.Context, client *compute.GalleryImageVersionsClient, id parse.SharedImageVersionId) resource.StateRefreshFunc {
+func sharedImageVersionDeleteStateRefreshFunc(ctx context.Context, client *compute.GalleryImageVersionsClient, id parse.SharedImageVersionId) pluginsdk.StateRefreshFunc {
 	// Whilst the Shared Image Version is deleted quickly, it appears it's not actually finished replicating at this time
 	// so the deletion of the parent Shared Image fails with "can not delete until nested resources are deleted"
 	// ergo we need to poll on this for a bit

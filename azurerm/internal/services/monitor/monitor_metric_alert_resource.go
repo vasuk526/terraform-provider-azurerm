@@ -11,7 +11,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/preview/monitor/mgmt/2019-06-01/insights"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -67,7 +66,7 @@ func resourceMonitorMetricAlert() *pluginsdk.Resource {
 				Type:        pluginsdk.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: `The resource type (e.g. Microsoft.Compute/virtualMachines) of the target resource. Required when using subscription, resource group scope or multiple scopes.`,
+				Description: `The resource type (e.g. Microsoft.Compute/virtualMachines) of the target pluginsdk. Required when using subscription, resource group scope or multiple scopes.`,
 			},
 
 			"target_resource_location": {
@@ -76,7 +75,7 @@ func resourceMonitorMetricAlert() *pluginsdk.Resource {
 				Computed:         true,
 				StateFunc:        location.StateFunc,
 				DiffSuppressFunc: location.DiffSuppressFunc,
-				Description:      `The location of the target resource. Required when using subscription, resource group scope or multiple scopes.`,
+				Description:      `The location of the target pluginsdk. Required when using subscription, resource group scope or multiple scopes.`,
 			},
 
 			// static criteria
@@ -455,7 +454,7 @@ func resourceMonitorMetricAlertCreateUpdate(d *pluginsdk.ResourceData, meta inte
 	// Monitor Metric Alert API would return 404 while creating multiple Monitor Metric Alerts and get each resource immediately once it's created successfully in parallel.
 	// Tracked by this issue: https://github.com/Azure/azure-rest-api-specs/issues/10973
 	log.Printf("[DEBUG] Waiting for Monitor Metric Alert %q (Resource Group %q) to be created", name, resourceGroup)
-	stateConf := &resource.StateChangeConf{
+	stateConf := &pluginsdk.StateChangeConf{
 		Pending:                   []string{"404"},
 		Target:                    []string{"200"},
 		Refresh:                   monitorMetricAlertStateRefreshFunc(ctx, client, resourceGroup, name),
@@ -957,7 +956,7 @@ func resourceMonitorMetricAlertActionHash(input interface{}) int {
 	return pluginsdk.HashString(buf.String())
 }
 
-func monitorMetricAlertStateRefreshFunc(ctx context.Context, client *insights.MetricAlertsClient, resourceGroupName string, name string) resource.StateRefreshFunc {
+func monitorMetricAlertStateRefreshFunc(ctx context.Context, client *insights.MetricAlertsClient, resourceGroupName string, name string) pluginsdk.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		res, err := client.Get(ctx, resourceGroupName, name)
 		if err != nil {
